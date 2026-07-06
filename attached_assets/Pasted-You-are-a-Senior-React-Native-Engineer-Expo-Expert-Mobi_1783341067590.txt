@@ -1,0 +1,424 @@
+You are a Senior React Native Engineer, Expo Expert, Mobile UI/UX Designer, Performance Engineer, Camera SDK Expert and Google Play Publishing Expert.
+
+Build a production-ready mobile application called "Pose Master AI".
+
+The app must be developed using:
+
+- React Native (Expo Latest)
+- TypeScript
+- Expo Router
+- React Native Reanimated
+- React Native Gesture Handler
+- React Native SVG
+- Expo Camera
+- MMKV Storage
+- React Query
+- Zustand
+- Firebase Authentication
+- Google Sign-In
+- Google Mobile Ads (placeholder)
+- Google Play Billing (placeholder)
+
+========================================
+
+PROJECT GOAL
+
+Pose Master AI helps users take professional photos by following transparent pose outline templates.
+
+The app is NOT a photo editor.
+
+The app is NOT an AI image generator.
+
+The app works like a smart camera assistant.
+
+Users simply choose a pose template.
+
+The camera opens.
+
+A transparent pose outline appears.
+
+The user fits inside the outline.
+
+Future AI compares the body with the template and captures automatically.
+
+Everything except Login, Subscription and Ads must work offline.
+
+========================================
+
+IMPORTANT
+
+Create production-level architecture.
+
+Scalable.
+
+Modular.
+
+Easy to maintain.
+
+No hardcoded values.
+
+========================================
+
+CREATE THIS FOLDER STRUCTURE
+
+app/
+
+components/
+
+features/
+
+camera/
+
+categories/
+
+gallery/
+
+favorites/
+
+profile/
+
+subscription/
+
+settings/
+
+services/
+
+hooks/
+
+store/
+
+constants/
+
+assets/
+
+svg/
+
+images/
+
+icons/
+
+json/
+
+utils/
+
+types/
+
+theme/
+
+navigation/
+
+========================================
+
+CREATE
+
+Dark Theme
+
+Light Theme
+
+Theme Provider
+
+Reusable Colors
+
+Spacing
+
+Typography
+
+Animations
+
+Icons
+
+========================================
+
+PRIMARY COLORS
+
+Black
+
+Dark Gray
+
+Gold Accent (#FFD54F)
+
+White Text
+
+Premium UI
+
+Rounded Cards
+
+Smooth Animations
+
+========================================
+
+CREATE THESE SCREENS
+
+Splash Screen
+
+Onboarding (3 Screens)
+
+Login Screen
+
+Guest Login
+
+Home
+
+Categories
+
+Favorites
+
+Gallery
+
+Profile
+
+Settings
+
+Premium Subscription Placeholder
+
+Privacy Policy
+
+Terms & Conditions
+
+About
+
+========================================
+
+BOTTOM TAB
+
+Home
+
+Categories
+
+Gallery
+
+Favorites
+
+Profile
+
+Animated Navigation
+
+========================================
+
+HOME SCREEN
+
+Premium Hero Banner
+
+Search Bar
+
+Popular Categories
+
+Trending
+
+Recently Viewed
+
+Recommended
+
+Continue Last Pose
+
+Premium Section
+
+Beautiful Cards
+
+Smooth Scroll
+
+========================================
+
+CATEGORIES
+
+Create beautiful category cards.
+
+Example
+
+Single Girl
+
+Single Boy
+
+Friends
+
+Couple
+
+Family
+
+Kids
+
+Wedding
+
+School
+
+College
+
+Traditional
+
+Temple
+
+Travel
+
+Nature
+
+Car
+
+Bike
+
+Cafe
+
+Fashion
+
+Instagram
+
+Reels
+
+Portrait
+
+More...
+
+Each category should support unlimited templates in future.
+
+========================================
+
+LOCAL DATABASE
+
+Prepare local storage.
+
+Save
+
+Theme
+
+Guest Login
+
+Favorites
+
+Recent Categories
+
+Recent Templates
+
+Settings
+
+========================================
+
+LOGIN
+
+Continue as Guest
+
+Google Login
+
+Future Email Login
+
+Future Apple Login
+
+Guest users can use the app.
+
+========================================
+
+PROFILE
+
+User Avatar
+
+Guest Label
+
+Login Button
+
+Subscription
+
+Settings
+
+Privacy Policy
+
+Terms
+
+Rate App
+
+Share
+
+About
+
+========================================
+
+SETTINGS
+
+Dark Mode
+
+Language
+
+Reset App
+
+Camera Quality Placeholder
+
+========================================
+
+CREATE REUSABLE COMPONENTS
+
+Primary Button
+
+Secondary Button
+
+Premium Card
+
+Category Card
+
+Section Header
+
+Loading Screen
+
+Empty State
+
+Search Bar
+
+Animated Banner
+
+========================================
+
+PERFORMANCE
+
+Prepare architecture for:
+
+Offline AI
+
+Pose Detection
+
+Distance Detection
+
+Overlay Engine
+
+Auto Capture
+
+Voice Guidance
+
+Live Camera Coach
+
+Future updates
+
+========================================
+
+SECURITY
+
+Do not request unnecessary permissions.
+
+Do not upload photos.
+
+Everything remains on device.
+
+Prepare Play Store compliant architecture.
+
+========================================
+
+DO NOT IMPLEMENT YET
+
+Camera
+
+Pose Overlay
+
+AI
+
+Distance Detection
+
+Voice Guidance
+
+Subscription Logic
+
+Ads Logic
+
+Only create placeholders and architecture.
+
+========================================
+
+At the end:
+
+Generate a complete Expo project with professional folder structure, reusable components, navigation, responsive UI, production-ready architecture and clean TypeScript code.
+
+The app must run successfully in Expo Preview without errors.

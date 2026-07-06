@@ -1,0 +1,8 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "7PnhYPqG771YfD9PP8pWq"
+uri = "file://artifacts/pose-master-ai/assets/images/icon.png"
+type = "image"
+title = "generated_image"

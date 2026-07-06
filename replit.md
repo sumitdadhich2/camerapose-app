@@ -1,6 +1,6 @@
-# [Project name]
+# Pose Master AI
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A mobile smart-camera-assistant app that helps users take professional photos by fitting themselves inside transparent pose outline templates (not a photo editor, not an AI image generator).
 
 ## Run & Operate
 
@@ -30,7 +30,7 @@ _Populate as you build — non-obvious choices a reader couldn't infer from the 
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+Offline-first mobile app (Expo) with: onboarding, guest/Google login (login is a placeholder — no real Firebase/Google SDK wired up yet), Home/Categories/Gallery/Favorites/Profile tabs, category → pose template browsing, camera/subscription/settings screens. Camera capture, pose detection, distance detection, voice guidance, billing, and ads are intentionally unimplemented placeholder services in `features/*` — ready to be wired up later.
 
 ## User preferences
 
@@ -38,7 +38,8 @@ _Populate as you build — explicit user instructions worth remembering across s
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Workflow name for the Expo artifact is `artifacts/pose-master-ai: expo` (not the slug) — use `listWorkflows()` to confirm exact names before restarting.
+- Uses AsyncStorage (not react-native-mmkv) for local persistence — MMKV requires a native build and isn't Expo Go compatible.
 
 ## Pointers
 

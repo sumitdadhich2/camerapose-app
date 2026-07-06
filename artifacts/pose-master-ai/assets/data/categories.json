@@ -1,0 +1,10 @@
+[
+  { "id": "c1", "name": "Single Girl", "icon": "person", "coverImagePlaceholder": "#FFD54F", "poseCount": 12, "isPremium": false, "subcategories": ["Standing", "Sitting", "Selfie"] },
+  { "id": "c2", "name": "Single Boy", "icon": "person-outline", "coverImagePlaceholder": "#4FC3F7", "poseCount": 10, "isPremium": false, "subcategories": ["Standing", "Walking"] },
+  { "id": "c3", "name": "Couple", "icon": "heart", "coverImagePlaceholder": "#E57373", "poseCount": 15, "isPremium": true, "subcategories": ["Holding Hands", "Hugging"] },
+  { "id": "c4", "name": "Friends", "icon": "people", "coverImagePlaceholder": "#81C784", "poseCount": 8, "isPremium": false, "subcategories": ["Group", "Selfie"] },
+  { "id": "c5", "name": "Family", "icon": "home", "coverImagePlaceholder": "#BA68C8", "poseCount": 5, "isPremium": false, "subcategories": ["Sitting", "Standing"] },
+  { "id": "c6", "name": "Kids", "icon": "happy", "coverImagePlaceholder": "#FFB74D", "poseCount": 7, "isPremium": false, "subcategories": ["Playing"] },
+  { "id": "c7", "name": "Travel", "icon": "airplane", "coverImagePlaceholder": "#64B5F6", "poseCount": 20, "isPremium": true, "subcategories": ["Mountain", "Beach"] },
+  { "id": "c8", "name": "Nature", "icon": "leaf", "coverImagePlaceholder": "#AED581", "poseCount": 14, "isPremium": false, "subcategories": ["Forest", "Park"] }
+]

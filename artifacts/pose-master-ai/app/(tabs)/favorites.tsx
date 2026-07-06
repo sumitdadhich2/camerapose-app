@@ -1,26 +1,33 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, StyleSheet, FlatList, Text, TouchableOpacity } from 'react-native';
 import { useColors } from '../../hooks/useColors';
 import { EmptyState } from '../../components/EmptyState';
 import { router } from 'expo-router';
 import { useFavoritesStore } from '../../store/useFavoritesStore';
-import { MOCK_TEMPLATES } from '../../constants/categories';
+import { PoseLibraryService } from '../../services/PoseLibraryService';
+import { PoseCard } from '../../components/PoseCard';
+import { CategoryCard } from '../../components/CategoryCard';
 import { SPACING, TYPOGRAPHY } from '../../constants/theme';
-import { Ionicons } from '@expo/vector-icons';
 
 export default function FavoritesScreen() {
   const colors = useColors();
-  const { favoriteIds, toggleFavorite } = useFavoritesStore();
+  const { favoritePoseIds, favoriteCategoryIds, toggleFavoritePose, toggleFavoriteCategory } = useFavoritesStore();
 
-  const favoriteTemplates = MOCK_TEMPLATES.filter(t => favoriteIds.includes(t.id));
+  const favoritePoses = useMemo(() => {
+    return favoritePoseIds.map(id => PoseLibraryService.getPoseById(id)).filter(Boolean) as any[];
+  }, [favoritePoseIds]);
 
-  if (favoriteTemplates.length === 0) {
+  const favoriteCategories = useMemo(() => {
+    return favoriteCategoryIds.map(id => PoseLibraryService.getCategoryById(id)).filter(Boolean) as any[];
+  }, [favoriteCategoryIds]);
+
+  if (favoritePoses.length === 0 && favoriteCategories.length === 0) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <EmptyState 
           icon="heart"
           title="No Favorites Yet"
-          description="Mark pose templates as favorite to easily find them later."
+          description="Mark pose templates and categories as favorite to easily find them later."
           actionTitle="Explore Poses"
           onActionPress={() => router.navigate('/(tabs)/categories')}
         />
@@ -28,36 +35,60 @@ export default function FavoritesScreen() {
     );
   }
 
-  const renderItem = ({ item }: { item: typeof MOCK_TEMPLATES[0] }) => (
-    <TouchableOpacity 
-      style={[styles.card, { backgroundColor: colors.card, borderRadius: colors.radius }]}
-      onPress={() => router.push(`/camera/${item.id}`)}
-      activeOpacity={0.8}
-    >
-      <View style={[styles.placeholder, { backgroundColor: colors.secondary, borderRadius: colors.radius }]} />
-      <View style={styles.cardInfo}>
-        <Text style={[styles.cardName, { color: colors.foreground }]} numberOfLines={1}>{item.name}</Text>
-        <TouchableOpacity 
-          style={styles.favButton}
-          onPress={() => toggleFavorite(item.id)}
-        >
-          <Ionicons name="heart" size={24} color={colors.primary} />
-        </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
+  const renderContent = () => (
+    <View>
+      {favoriteCategories.length > 0 && (
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Categories</Text>
+          <FlatList
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.hList}
+            data={favoriteCategories}
+            keyExtractor={item => item.id}
+            renderItem={({ item }) => (
+              <View style={[styles.catWrapper, { backgroundColor: colors.card, borderRadius: colors.radius }]}>
+                <CategoryCard 
+                  name={item.name}
+                  icon={item.icon}
+                  count={item.poseCount}
+                  onPress={() => router.push(`/category/${item.id}`)}
+                />
+              </View>
+            )}
+          />
+        </View>
+      )}
+
+      {favoritePoses.length > 0 && (
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Poses</Text>
+          <View style={styles.grid}>
+            {favoritePoses.map((pose) => (
+              <View key={pose.id} style={styles.gridItem}>
+                <PoseCard 
+                  pose={pose}
+                  onPress={() => router.push(`/pose/${pose.id}`)}
+                  isFavorite={true}
+                  onToggleFavorite={() => toggleFavoritePose(pose.id)}
+                  style={{ width: '100%' }}
+                />
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
+      <View style={{ height: 100 }} />
+    </View>
   );
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Text style={[styles.headerText, { color: colors.foreground }]}>Favorites</Text>
-      <FlatList
-        data={favoriteTemplates}
-        keyExtractor={item => item.id}
-        numColumns={2}
-        contentContainerStyle={styles.listContainer}
-        columnWrapperStyle={styles.row}
+      <FlatList 
+        data={[{key: 'content'}]}
+        renderItem={() => renderContent()}
         showsVerticalScrollIndicator={false}
-        renderItem={renderItem}
       />
     </View>
   );
@@ -72,36 +103,32 @@ const styles = StyleSheet.create({
     fontFamily: TYPOGRAPHY.weights.bold,
     fontSize: TYPOGRAPHY.sizes.xxl,
     paddingHorizontal: SPACING.xl,
-    marginBottom: SPACING.md,
-  },
-  listContainer: {
-    paddingHorizontal: SPACING.lg,
-    paddingBottom: 100,
-  },
-  row: {
-    justifyContent: 'space-between',
     marginBottom: SPACING.lg,
   },
-  card: {
-    width: '48%',
-    padding: SPACING.sm,
+  section: {
+    marginBottom: SPACING.xl,
   },
-  placeholder: {
-    width: '100%',
-    aspectRatio: 3/4,
-    marginBottom: SPACING.sm,
+  sectionTitle: {
+    fontFamily: TYPOGRAPHY.weights.bold,
+    fontSize: TYPOGRAPHY.sizes.lg,
+    paddingHorizontal: SPACING.lg,
+    marginBottom: SPACING.md,
   },
-  cardInfo: {
+  hList: {
+    paddingHorizontal: SPACING.lg,
+    gap: SPACING.md,
+  },
+  catWrapper: {
+    overflow: 'hidden',
+  },
+  grid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: SPACING.lg,
     justifyContent: 'space-between',
-    alignItems: 'center',
   },
-  cardName: {
-    flex: 1,
-    fontFamily: TYPOGRAPHY.weights.medium,
-    fontSize: TYPOGRAPHY.sizes.md,
-  },
-  favButton: {
-    padding: 4,
+  gridItem: {
+    width: '48%',
+    marginBottom: SPACING.lg,
   }
 });

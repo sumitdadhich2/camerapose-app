@@ -11,7 +11,6 @@ export default function CameraPlaceholderScreen() {
   const { id } = useLocalSearchParams();
   const colors = useColors();
   const { addRecentTemplate } = useRecentStore();
-  const [hasPermission, setHasPermission] = useState(false);
 
   useEffect(() => {
     if (id && typeof id === 'string') {
@@ -21,7 +20,6 @@ export default function CameraPlaceholderScreen() {
 
   const handleCapture = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    // Placeholder action
   };
 
   const handleClose = () => {
@@ -30,7 +28,6 @@ export default function CameraPlaceholderScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: '#000000' }]}>
-      {/* Header Controls */}
       <View style={styles.topControls}>
         <TouchableOpacity style={styles.iconButton} onPress={handleClose}>
           <Ionicons name="close" size={28} color="#ffffff" />
@@ -43,9 +40,7 @@ export default function CameraPlaceholderScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Main Camera Viewport Placeholder */}
       <View style={styles.viewport}>
-        {/* Transparent Pose Outline Placeholder */}
         <View style={styles.poseOutline}>
           <Ionicons name="body-outline" size={200} color="rgba(255, 213, 79, 0.4)" />
         </View>
@@ -54,7 +49,6 @@ export default function CameraPlaceholderScreen() {
         </View>
       </View>
 
-      {/* Bottom Controls */}
       <View style={styles.bottomControls}>
         <View style={styles.settingsRow}>
           <TouchableOpacity style={styles.smallIconButton}>
@@ -101,7 +95,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#1a1a1a', // Simulates camera preview area
+    backgroundColor: '#1a1a1a',
   },
   poseOutline: {
     position: 'absolute',

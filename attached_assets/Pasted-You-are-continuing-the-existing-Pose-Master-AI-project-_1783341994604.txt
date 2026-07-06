@@ -1,0 +1,443 @@
+You are continuing the existing Pose Master AI project.
+
+Do NOT recreate the project.
+
+Do NOT change existing navigation or theme.
+
+Only extend the current project.
+
+======================================
+
+GOAL
+
+Build the complete offline pose library system.
+
+The app must be scalable for over 10,000 pose templates in future.
+
+Everything must work offline.
+
+No server.
+
+No API.
+
+No cloud.
+
+======================================
+
+CREATE A LOCAL POSE DATABASE
+
+Inside assets create
+
+assets/data/
+
+Create
+
+categories.json
+
+poses.json
+
+Each pose should contain
+
+id
+
+title
+
+category
+
+subcategory
+
+gender
+
+ageGroup
+
+difficulty
+
+cameraType
+
+recommendedDistance
+
+orientation
+
+premium
+
+favorite
+
+description
+
+tips
+
+svgOutline
+
+previewImage
+
+tags
+
+Example
+
+Single Girl
+
+Traditional
+
+Easy
+
+Front Camera
+
+2.5 Meter
+
+======================================
+
+CREATE CATEGORY SYSTEM
+
+Main Categories
+
+Single Girl
+
+Single Boy
+
+Couple
+
+Friends
+
+Family
+
+Kids
+
+School
+
+College
+
+Traditional
+
+Wedding
+
+Birthday
+
+Festival
+
+Travel
+
+Nature
+
+Jungle
+
+Mountain
+
+Temple
+
+Car
+
+Bike
+
+Cafe
+
+Gym
+
+Fashion
+
+Instagram
+
+Reels
+
+Portrait
+
+Luxury
+
+Beach
+
+Sunset
+
+Night
+
+Street
+
+Office
+
+Baby
+
+Pet
+
+Photography
+
+Group
+
+More
+
+Each category should display
+
+Icon
+
+Cover Image Placeholder
+
+Number of Poses
+
+Premium Badge
+
+======================================
+
+SUBCATEGORY SYSTEM
+
+Example
+
+Single Girl
+
+Standing
+
+Walking
+
+Sitting
+
+Mirror
+
+Phone
+
+Smile
+
+Traditional
+
+Modern
+
+Fashion
+
+Travel
+
+Temple
+
+Car
+
+Bike
+
+Nature
+
+Selfie
+
+======================================
+
+SEARCH SYSTEM
+
+Offline Search
+
+Instant Search
+
+Search by
+
+Title
+
+Category
+
+Tags
+
+Difficulty
+
+Gender
+
+No Internet Required
+
+======================================
+
+FILTER SYSTEM
+
+Gender
+
+Girl
+
+Boy
+
+Unisex
+
+Age
+
+Kids
+
+Teen
+
+Adult
+
+Family
+
+Difficulty
+
+Easy
+
+Medium
+
+Hard
+
+Premium
+
+Free
+
+Camera
+
+Front
+
+Rear
+
+======================================
+
+HOME PAGE
+
+Upgrade the home page.
+
+Create
+
+Trending Today
+
+Recommended
+
+Popular Categories
+
+Recently Viewed
+
+Continue Last Pose
+
+Premium Collection
+
+New Poses
+
+Quick Categories
+
+Beautiful Cards
+
+Horizontal Sliders
+
+Smooth Animations
+
+======================================
+
+CATEGORY PAGE
+
+Modern Grid Layout
+
+Beautiful Animations
+
+Category Banner
+
+Search
+
+Filters
+
+Recently Opened
+
+Favorite Categories
+
+======================================
+
+POSE DETAILS PAGE
+
+Create a new page.
+
+Display
+
+Large Preview Placeholder
+
+Title
+
+Difficulty
+
+Category
+
+Recommended Distance
+
+Tips
+
+Description
+
+Premium Badge
+
+Favorite Button
+
+Open Camera Button (Placeholder)
+
+======================================
+
+FAVORITES
+
+Allow user to favorite categories.
+
+Allow user to favorite pose templates.
+
+Save offline.
+
+======================================
+
+RECENT HISTORY
+
+Save
+
+Recently Viewed Categories
+
+Recently Opened Pose
+
+Continue Last Pose
+
+======================================
+
+LOCAL STORAGE
+
+Save everything using MMKV.
+
+======================================
+
+DESIGN
+
+Premium
+
+Modern
+
+Black + Gold Theme
+
+Rounded Cards
+
+Smooth Animations
+
+Glass Effect where appropriate
+
+Beautiful Empty States
+
+======================================
+
+PERFORMANCE
+
+Support
+
+10,000+ Poses
+
+Fast Search
+
+Lazy Loading
+
+Virtualized Lists
+
+No Lag
+
+======================================
+
+DO NOT IMPLEMENT
+
+Camera
+
+Overlay
+
+AI
+
+Pose Detection
+
+Distance Detection
+
+Auto Capture
+
+Voice Guide
+
+Only prepare the complete offline pose management system.
+
+======================================
+
+At the end,
+
+Make sure everything works in Expo Preview without errors.
+
+No TypeScript errors.
+
+No Navigation errors.
+
+No performance warnings.

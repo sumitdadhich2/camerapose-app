@@ -14,9 +14,7 @@ export function useColors() {
   if (storeDarkMode === false) activeScheme = 'light';
   
   const palette =
-    activeScheme === "dark" && "dark" in colors
-      ? (colors as Record<string, typeof colors.light>).dark
-      : colors.light;
+    activeScheme === "dark" && "dark" in colors ? colors.dark : colors.light;
   return { ...palette, radius: colors.radius };
 }
 

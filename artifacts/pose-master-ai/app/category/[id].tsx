@@ -1,78 +1,120 @@
-import React from 'react';
-import { View, StyleSheet, ScrollView, Text } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { View, StyleSheet, Text, FlatList, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useColors } from '../../hooks/useColors';
-import { CATEGORIES, MOCK_TEMPLATES } from '../../constants/categories';
 import { SPACING, TYPOGRAPHY } from '../../constants/theme';
-import { TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFavoritesStore } from '../../store/useFavoritesStore';
+import { PoseLibraryService } from '../../services/PoseLibraryService';
+import { PoseCard } from '../../components/PoseCard';
+import { SearchBar } from '../../components/SearchBar';
+import { FilterSheet } from '../../components/FilterSheet';
+import { PoseFilter } from '../../types';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 
 export default function CategoryDetailScreen() {
   const { id } = useLocalSearchParams();
   const colors = useColors();
-  const { favoriteIds, toggleFavorite } = useFavoritesStore();
+  const { favoritePoseIds, toggleFavoritePose } = useFavoritesStore();
 
-  const category = CATEGORIES.find(c => c.id === id);
-  const templates = MOCK_TEMPLATES.filter(t => t.categoryId === id);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterVisible, setFilterVisible] = useState(false);
+  const [filters, setFilters] = useState<PoseFilter>({});
+
+  const category = useMemo(() => PoseLibraryService.getCategoryById(id as string), [id]);
+
+  const poses = useMemo(() => {
+    let result = PoseLibraryService.getPosesByCategory(id as string, filters);
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(p => 
+        p.title.toLowerCase().includes(q) || 
+        p.tags.some(t => t.toLowerCase().includes(q))
+      );
+    }
+    return result;
+  }, [id, filters, searchQuery]);
 
   if (!category) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }]}>
         <Text style={{ color: colors.foreground }}>Category not found</Text>
+        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 20 }}>
+          <Text style={{ color: colors.primary }}>Go Back</Text>
+        </TouchableOpacity>
       </View>
     );
   }
 
-  // Generate some fake placeholder items to show grid if empty (for architecture demo)
-  const displayTemplates = templates.length > 0 ? templates : Array.from({ length: 6 }).map((_, i) => ({
-    id: `fake-${i}`,
-    categoryId: category.id,
-    name: `Pose ${i + 1}`,
-  }));
-
-  const renderItem = (item: any, index: number) => {
-    const isFav = favoriteIds.includes(item.id);
-    return (
-      <Animated.View key={item.id} entering={FadeInUp.delay(index * 50).duration(300)} style={styles.cardContainer}>
-        <TouchableOpacity 
-          style={[styles.card, { backgroundColor: colors.card, borderRadius: colors.radius }]}
-          onPress={() => router.push(`/camera/${item.id}`)}
-          activeOpacity={0.8}
-        >
-          <View style={[styles.placeholder, { backgroundColor: colors.secondary, borderRadius: colors.radius }]}>
-            <Ionicons name="body-outline" size={40} color={colors.mutedForeground} style={{ opacity: 0.5 }} />
-          </View>
-          <View style={styles.cardInfo}>
-            <Text style={[styles.cardName, { color: colors.foreground }]} numberOfLines={1}>{item.name}</Text>
-            <TouchableOpacity 
-              style={styles.favButton}
-              onPress={() => toggleFavorite(item.id)}
-            >
-              <Ionicons name={isFav ? "heart" : "heart-outline"} size={24} color={isFav ? colors.primary : colors.mutedForeground} />
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      </Animated.View>
-    );
-  };
+  const renderItem = ({ item, index }: { item: any, index: number }) => (
+    <Animated.View entering={FadeInUp.delay(Math.min(index * 20, 300)).duration(300)} style={styles.cardContainer}>
+      <PoseCard 
+        pose={item}
+        onPress={() => router.push(`/pose/${item.id}`)}
+        isFavorite={favoritePoseIds.includes(item.id)}
+        onToggleFavorite={() => toggleFavoritePose(item.id)}
+        style={{ width: '100%' }}
+      />
+    </Animated.View>
+  );
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <View style={[styles.iconContainer, { backgroundColor: colors.secondary, borderRadius: colors.radius * 2 }]}>
-          <Ionicons name={category.icon as any} size={40} color={colors.primary} />
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={24} color={colors.foreground} />
+        </TouchableOpacity>
+        <View style={styles.headerTitleContainer}>
+          <Text style={[styles.title, { color: colors.foreground }]} numberOfLines={1}>{category.name}</Text>
+          <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>{category.poseCount} Poses</Text>
         </View>
-        <Text style={[styles.title, { color: colors.foreground }]}>{category.name} Poses</Text>
-        <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>{category.templateCount} Templates</Text>
       </View>
 
-      <View style={styles.grid}>
-        {displayTemplates.map((item, i) => renderItem(item, i))}
+      <View style={styles.searchRow}>
+        <SearchBar 
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Search within category..."
+          style={styles.searchBar}
+        />
+        <TouchableOpacity 
+          style={[styles.filterBtn, { backgroundColor: Object.keys(filters).length ? colors.primary : colors.secondary, borderRadius: colors.radius }]}
+          onPress={() => setFilterVisible(true)}
+        >
+          <Ionicons name="options-outline" size={20} color={Object.keys(filters).length ? colors.primaryForeground : colors.foreground} />
+        </TouchableOpacity>
       </View>
-      <View style={{ height: 40 }} />
-    </ScrollView>
+
+      <FlatList
+        data={poses}
+        keyExtractor={item => item.id}
+        numColumns={2}
+        contentContainerStyle={styles.listContent}
+        columnWrapperStyle={styles.row}
+        showsVerticalScrollIndicator={false}
+        renderItem={renderItem}
+        getItemLayout={(data, index) => (
+          {length: 220, offset: 220 * index, index}
+        )}
+        windowSize={10}
+        maxToRenderPerBatch={10}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Text style={{ color: colors.mutedForeground }}>No poses found matching your filters.</Text>
+            <TouchableOpacity onPress={() => { setFilters({}); setSearchQuery(''); }} style={{ marginTop: 10 }}>
+              <Text style={{ color: colors.primary }}>Clear Filters</Text>
+            </TouchableOpacity>
+          </View>
+        }
+      />
+
+      <FilterSheet 
+        visible={filterVisible}
+        onClose={() => setFilterVisible(false)}
+        initialFilters={filters}
+        onApply={setFilters}
+      />
+    </View>
   );
 }
 
@@ -80,60 +122,57 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  content: {
-    padding: SPACING.lg,
-  },
   header: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: SPACING.xxl,
-    marginTop: SPACING.lg,
+    paddingTop: 60,
+    paddingHorizontal: SPACING.md,
+    paddingBottom: SPACING.md,
   },
-  iconContainer: {
-    width: 80,
-    height: 80,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: SPACING.md,
+  backBtn: {
+    padding: SPACING.sm,
+    marginRight: SPACING.sm,
+  },
+  headerTitleContainer: {
+    flex: 1,
   },
   title: {
     fontFamily: TYPOGRAPHY.weights.bold,
-    fontSize: TYPOGRAPHY.sizes.xxxl,
-    marginBottom: SPACING.xs,
+    fontSize: TYPOGRAPHY.sizes.xl,
   },
   subtitle: {
     fontFamily: TYPOGRAPHY.weights.regular,
-    fontSize: TYPOGRAPHY.sizes.md,
+    fontSize: TYPOGRAPHY.sizes.sm,
   },
-  grid: {
+  searchRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.lg,
+    marginBottom: SPACING.md,
+    gap: SPACING.sm,
   },
-  cardContainer: {
-    width: '48%',
-    marginBottom: SPACING.lg,
+  searchBar: {
+    flex: 1,
   },
-  card: {
-    padding: SPACING.sm,
-  },
-  placeholder: {
-    width: '100%',
-    aspectRatio: 3/4,
-    marginBottom: SPACING.sm,
+  filterBtn: {
+    width: 48,
+    height: 48,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cardInfo: {
-    flexDirection: 'row',
+  listContent: {
+    paddingHorizontal: SPACING.lg,
+    paddingBottom: 100,
+  },
+  row: {
     justifyContent: 'space-between',
+    marginBottom: SPACING.lg,
+  },
+  cardContainer: {
+    width: '48%',
+  },
+  emptyContainer: {
     alignItems: 'center',
-  },
-  cardName: {
-    flex: 1,
-    fontFamily: TYPOGRAPHY.weights.medium,
-    fontSize: TYPOGRAPHY.sizes.md,
-  },
-  favButton: {
-    padding: 4,
+    justifyContent: 'center',
+    paddingVertical: 40,
   }
 });

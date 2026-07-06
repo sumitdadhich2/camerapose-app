@@ -28,7 +28,23 @@
         }
       ],
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Pose Master AI needs camera access so you can line yourself up with pose templates.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Pose Master AI saves your captured photos to your device gallery.",
+          "savePhotosPermission": "Pose Master AI saves your captured photos to your device gallery.",
+          "isAccessMediaLocationEnabled": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

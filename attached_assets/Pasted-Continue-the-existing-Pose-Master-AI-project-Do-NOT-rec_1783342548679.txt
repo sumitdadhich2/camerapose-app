@@ -1,0 +1,359 @@
+Continue the existing Pose Master AI project.
+
+Do NOT recreate the project.
+
+Do NOT modify previous features.
+
+Only extend the project.
+
+=========================
+MAIN GOAL
+=========================
+
+Build a professional camera module with a premium user experience.
+
+This is NOT a normal camera.
+
+It is the foundation for the future Pose Guide system.
+
+Everything should feel premium, smooth, modern and responsive.
+
+The UI should be inspired by premium camera applications like Pixel Camera, Instagram Camera and iPhone Camera while remaining completely original.
+
+=========================
+CAMERA ENGINE
+=========================
+
+Use Expo Camera.
+
+Create a fast camera experience.
+
+The camera should open instantly.
+
+Support:
+
+Front Camera
+
+Rear Camera
+
+Flash Auto
+
+Flash On
+
+Flash Off
+
+Torch
+
+Tap to Focus
+
+Pinch to Zoom
+
+Exposure Control
+
+HDR Placeholder
+
+High Quality Capture
+
+Picture Quality Settings
+
+Mirror Front Camera
+
+Grid Lines
+
+3x3 Grid
+
+Safe Area Support
+
+Orientation Support
+
+=========================
+CAMERA UI
+=========================
+
+Redesign the entire camera screen.
+
+The interface must be minimal and premium.
+
+Top Bar
+
+Flash
+
+HDR Placeholder
+
+Settings
+
+Battery Friendly Indicator
+
+Bottom Bar
+
+Gallery Preview
+
+Large Premium Capture Button
+
+Switch Camera Button
+
+Camera Modes Placeholder
+
+Modern Rounded Buttons
+
+Soft Animations
+
+Glassmorphism Panels
+
+Blur Effects where possible
+
+Rounded Corners
+
+Professional Shadows
+
+Smooth Press Animations
+
+Haptic Feedback Placeholder
+
+=========================
+CAMERA SETTINGS
+=========================
+
+Create a settings bottom sheet.
+
+Camera Quality
+
+High
+
+Medium
+
+Low
+
+Grid
+
+On
+
+Off
+
+Mirror Selfie
+
+On
+
+Off
+
+Capture Sound
+
+On
+
+Off
+
+Save Location Placeholder
+
+Image Quality
+
+JPEG Placeholder
+
+PNG Placeholder
+
+Future RAW Placeholder
+
+=========================
+CAMERA PREVIEW
+=========================
+
+The camera preview must fill the screen.
+
+Maintain correct aspect ratio.
+
+No stretching.
+
+No flickering.
+
+No lag.
+
+=========================
+OVERLAY LAYER
+=========================
+
+Prepare a dedicated transparent overlay layer above the camera preview.
+
+This layer will later display SVG pose templates.
+
+Do NOT implement templates yet.
+
+Only prepare the architecture.
+
+Overlay Layer should support
+
+Opacity
+
+Scale
+
+Rotation
+
+Lock
+
+Future Drag
+
+Future AI Alignment
+
+=========================
+GESTURES
+=========================
+
+Support
+
+Tap to Focus
+
+Pinch to Zoom
+
+Double Tap Switch Camera
+
+Long Press Capture Placeholder
+
+=========================
+CAPTURE
+=========================
+
+Implement Manual Capture only.
+
+Captured image should save locally.
+
+Do NOT upload anywhere.
+
+Show smooth capture animation.
+
+Show thumbnail in gallery button.
+
+=========================
+PHOTO REVIEW
+=========================
+
+After capture
+
+Show preview screen.
+
+Options
+
+Save
+
+Retake
+
+Share Placeholder
+
+Delete
+
+=========================
+CAMERA PERFORMANCE
+=========================
+
+Camera should feel smooth.
+
+Target
+
+60 FPS UI
+
+No Frame Drops
+
+Memory Optimized
+
+Battery Optimized
+
+Fast Startup
+
+Lazy Components
+
+=========================
+DESIGN
+=========================
+
+Improve the overall UI across the app.
+
+Use premium spacing.
+
+Modern rounded cards.
+
+Better typography.
+
+Better icons.
+
+Better animations.
+
+Use premium gradients only where appropriate.
+
+Improve
+
+Home
+
+Categories
+
+Profile
+
+Gallery
+
+Favorites
+
+Settings
+
+Everything should feel more polished than before.
+
+=========================
+ANIMATIONS
+=========================
+
+Page Transitions
+
+Button Press
+
+Fade
+
+Scale
+
+Slide
+
+Bottom Sheets
+
+Smooth Navigation
+
+=========================
+ACCESSIBILITY
+=========================
+
+Large Touch Targets
+
+Readable Fonts
+
+Dark Mode Optimized
+
+Responsive Layout
+
+=========================
+DO NOT IMPLEMENT
+=========================
+
+AI
+
+Pose Detection
+
+Distance Detection
+
+Voice Coach
+
+Auto Capture
+
+Overlay Templates
+
+Those will come in future prompts.
+
+Only prepare the camera engine and overlay architecture.
+
+=========================
+OUTPUT
+=========================
+
+The project must compile successfully.
+
+No TypeScript errors.
+
+No Navigation errors.
+
+No Camera crashes.
+
+Everything should work correctly inside Expo Preview.
+
+Refactor the code if needed while preserving all previous functionality.

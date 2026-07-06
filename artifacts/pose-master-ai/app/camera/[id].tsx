@@ -44,6 +44,18 @@ export default function CameraScreen() {
   const focusY = useSharedValue(0);
   const focusOpacity = useSharedValue(0);
 
+  const captureAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: captureScale.value }]
+  }));
+
+  const focusAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: focusOpacity.value,
+    transform: [
+      { translateX: focusX.value - 25 },
+      { translateY: focusY.value - 25 }
+    ]
+  }));
+
   useEffect(() => {
     if (id && typeof id === 'string') {
       addRecentTemplate(id);
@@ -139,18 +151,6 @@ export default function CameraScreen() {
     });
 
   const composed = Gesture.Simultaneous(pinchGesture, tapGesture);
-
-  const captureAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: captureScale.value }]
-  }));
-
-  const focusAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: focusOpacity.value,
-    transform: [
-      { translateX: focusX.value - 25 },
-      { translateY: focusY.value - 25 }
-    ]
-  }));
 
   const lastPhoto = photos.length > 0 ? photos[0] : null;
 

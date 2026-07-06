@@ -9,6 +9,7 @@ import { useRecentStore } from '../../store/useRecentStore';
 import { PoseLibraryService } from '../../services/PoseLibraryService';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { PrimaryButton } from '../../components/PrimaryButton';
+import { getSvgOutline } from '../../features/overlay/svgOutlines';
 
 export default function PoseDetailsScreen() {
   const { id } = useLocalSearchParams();
@@ -37,12 +38,15 @@ export default function PoseDetailsScreen() {
 
   const isFavorite = favoritePoseIds.includes(pose.id);
   const category = PoseLibraryService.getCategoryById(pose.categoryId);
+  const OutlinePreview = getSvgOutline(pose.svgOutline);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Animated.View entering={FadeInDown.duration(400)} style={[styles.previewContainer, { backgroundColor: pose.previewImage || colors.secondary, borderRadius: colors.radius * 2 }]}>
-          <Ionicons name="body-outline" size={100} color={colors.card} style={{ opacity: 0.5 }} />
+          <Animated.View entering={FadeIn.delay(150).duration(500)}>
+            <OutlinePreview width={140} height={224} color="rgba(0,0,0,0.55)" />
+          </Animated.View>
           {pose.premium && (
             <View style={[styles.premiumBadge, { backgroundColor: colors.primary }]}>
               <Ionicons name="star" size={16} color={colors.primaryForeground} />
@@ -79,9 +83,15 @@ export default function PoseDetailsScreen() {
 
           <Text style={[styles.description, { color: colors.mutedForeground }]}>{pose.description}</Text>
 
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Recommended Distance</Text>
-            <Text style={[styles.sectionContent, { color: colors.mutedForeground }]}>{pose.recommendedDistance}</Text>
+          <View style={styles.dualSectionRow}>
+            <View style={[styles.section, styles.halfSection]}>
+              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Recommended Distance</Text>
+              <Text style={[styles.sectionContent, { color: colors.mutedForeground }]}>{pose.recommendedDistance}</Text>
+            </View>
+            <View style={[styles.section, styles.halfSection]}>
+              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Recommended Height</Text>
+              <Text style={[styles.sectionContent, { color: colors.mutedForeground }]}>{pose.recommendedHeight}</Text>
+            </View>
           </View>
 
           <View style={styles.section}>
@@ -194,6 +204,13 @@ const styles = StyleSheet.create({
   },
   section: {
     marginBottom: SPACING.xl,
+  },
+  dualSectionRow: {
+    flexDirection: 'row',
+    gap: SPACING.lg,
+  },
+  halfSection: {
+    flex: 1,
   },
   sectionTitle: {
     fontFamily: TYPOGRAPHY.weights.bold,

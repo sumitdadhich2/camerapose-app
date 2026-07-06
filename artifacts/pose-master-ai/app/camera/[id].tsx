@@ -12,11 +12,14 @@ import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-g
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, runOnJS, withSequence, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PoseOverlayLayer } from '../../features/camera/PoseOverlayLayer';
+import { OverlayControls } from '../../features/camera/OverlayControls';
 import { CameraSettingsSheet } from '../../features/camera/CameraSettingsSheet';
 import { PhotoReviewModal } from '../../features/camera/PhotoReviewModal';
 import { CameraGrid } from '../../features/camera/CameraGrid';
 import { useCameraSettingsStore } from '../../store/useCameraSettingsStore';
 import { useCapturedPhotosStore } from '../../store/useCapturedPhotosStore';
+import { useOverlayStore } from '../../store/useOverlayStore';
+import { PoseLibraryService } from '../../services/PoseLibraryService';
 import { PrimaryButton } from '../../components/PrimaryButton';
 
 export default function CameraScreen() {
@@ -29,6 +32,10 @@ export default function CameraScreen() {
   const cameraRef = useRef<CameraView>(null);
   const settings = useCameraSettingsStore();
   const { photos, loadPhotos } = useCapturedPhotosStore();
+  const { loadState: loadOverlayState, setLastPoseId } = useOverlayStore();
+
+  const pose = typeof id === 'string' ? PoseLibraryService.getPoseById(id) : undefined;
+  const outlineKey = pose?.svgOutline ?? 'placeholder';
 
   const [facing, setFacing] = useState<'front' | 'back'>('back');
   const [flash, setFlash] = useState<'off' | 'on' | 'auto'>('off');
@@ -59,8 +66,10 @@ export default function CameraScreen() {
   useEffect(() => {
     if (id && typeof id === 'string') {
       addRecentTemplate(id);
+      setLastPoseId(id);
     }
     loadPhotos();
+    loadOverlayState();
   }, [id]);
 
   if (!permission) {
@@ -161,6 +170,11 @@ export default function CameraScreen() {
           <Ionicons name="camera-outline" size={64} color="#555" />
           <Text style={{ color: '#888', marginTop: 16 }}>Camera not fully supported on Web.</Text>
           <Text style={{ color: '#888' }}>Please use Expo Go on a real device.</Text>
+          <PoseOverlayLayer poseOutlineKey={outlineKey} />
+          <OverlayControls />
+          <TouchableOpacity style={styles.webBackButton} onPress={() => router.back()}>
+            <Ionicons name="close" size={28} color="#ffffff" />
+          </TouchableOpacity>
         </View>
       ) : (
         <GestureDetector gesture={composed}>
@@ -178,7 +192,7 @@ export default function CameraScreen() {
             <CameraGrid visible={settings.grid} />
             
             {/* Pose Overlay Architecture */}
-            <PoseOverlayLayer />
+            <PoseOverlayLayer poseOutlineKey={outlineKey} />
 
             {/* Tap to focus ring */}
             <Animated.View style={[styles.focusRing, focusAnimatedStyle]} />
@@ -187,6 +201,9 @@ export default function CameraScreen() {
             <View style={[styles.instructionBadge, { top: Math.max(insets.top + 80, 100) }]}>
               <Text style={styles.instructionText}>Fit body inside the gold outline</Text>
             </View>
+
+            {/* Overlay Controls FAB / Panel */}
+            <OverlayControls />
 
             {/* Top Chrome */}
             <BlurView intensity={30} tint="dark" style={[styles.topControls, { paddingTop: Math.max(insets.top, 20) }]}>
@@ -274,6 +291,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#000',
+  },
+  webBackButton: {
+    position: 'absolute',
+    top: 50,
+    left: SPACING.md,
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   permissionContainer: {
     flex: 1,

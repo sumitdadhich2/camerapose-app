@@ -18,14 +18,24 @@ export type PoseTemplate = {
   difficulty: 'easy' | 'medium' | 'hard';
   cameraType: 'front' | 'rear';
   recommendedDistance: string;
+  /** Recommended camera/subject height, e.g. "Waist Level" or "Eye Level". */
+  recommendedHeight: string;
   orientation: 'portrait' | 'landscape';
   premium: boolean;
   description: string;
   tips: string[];
+  /** Key into the local SVG outline registry (see features/overlay/svgOutlines.tsx). */
   svgOutline: string;
   previewImage: string;
   tags: string[];
 };
+
+/**
+ * Recommended orientation is the same concept as `PoseTemplate.orientation` —
+ * kept as a single source of truth on the template rather than duplicating
+ * the field, to avoid the two drifting out of sync.
+ */
+export type RecommendedOrientation = PoseTemplate['orientation'];
 
 export type UserProfile = {
   id: string;

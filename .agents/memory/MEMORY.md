@@ -1,0 +1,1 @@
+- [Pose Master AI overlay engine](pose-master-ai-overlay-engine.md) — SVG outline registry, overlay gesture/store architecture, and camera-permission-blocks-web-preview gotcha.

@@ -1,0 +1,361 @@
+Continue the existing Pose Master AI project.
+
+Do NOT recreate the app.
+
+Do NOT modify previous working features.
+
+Only extend the existing project.
+
+========================================
+
+MAIN GOAL
+
+Build a professional SVG Pose Overlay Engine.
+
+The overlay must work completely offline.
+
+The system should be lightweight, scalable and smooth.
+
+This overlay engine is the foundation for future AI pose detection.
+
+========================================
+
+POSE TEMPLATE SYSTEM
+
+Create a complete Pose Template Engine.
+
+Each pose template should contain:
+
+id
+
+title
+
+category
+
+subcategory
+
+difficulty
+
+cameraType
+
+recommendedDistance
+
+recommendedHeight
+
+recommendedOrientation
+
+tips
+
+svgOutline
+
+previewImage
+
+premium
+
+favorite
+
+tags
+
+Everything should be loaded locally from JSON.
+
+No internet.
+
+No API.
+
+========================================
+
+SVG OVERLAY
+
+Display the selected SVG outline above the live camera preview.
+
+The overlay should have:
+
+Transparent background
+
+White outline
+
+Smooth rendering
+
+High quality scaling
+
+No pixelation
+
+Maintain aspect ratio
+
+Always remain above camera preview
+
+========================================
+
+OVERLAY CONTROLS
+
+Create floating premium controls.
+
+User can:
+
+Increase Size
+
+Decrease Size
+
+Rotate Left
+
+Rotate Right
+
+Move Up
+
+Move Down
+
+Move Left
+
+Move Right
+
+Reset Position
+
+Reset Rotation
+
+Reset Size
+
+Lock Overlay
+
+Unlock Overlay
+
+Hide Overlay
+
+Show Overlay
+
+Adjust Opacity
+
+========================================
+
+OPACITY
+
+Create a beautiful glass slider.
+
+0%
+
+25%
+
+50%
+
+75%
+
+100%
+
+Changes should happen instantly.
+
+========================================
+
+CAMERA EXPERIENCE
+
+When user taps
+
+"Start Pose"
+
+Open Camera
+
+Load selected SVG
+
+Display overlay instantly
+
+No lag.
+
+========================================
+
+POSE PREVIEW
+
+Before opening camera
+
+Show
+
+Large Preview
+
+Pose Name
+
+Difficulty
+
+Recommended Distance
+
+Tips
+
+Premium Badge
+
+Favorite Button
+
+Start Camera Button
+
+========================================
+
+UI DESIGN
+
+Redesign camera interface.
+
+Premium.
+
+Minimal.
+
+Luxury.
+
+Black Theme.
+
+Gold Accent.
+
+Glass Cards.
+
+Rounded Buttons.
+
+Floating Action Buttons.
+
+Beautiful Shadows.
+
+Professional spacing.
+
+Inspired by premium camera apps.
+
+========================================
+
+CATEGORY TO CAMERA FLOW
+
+Home
+
+↓
+
+Category
+
+↓
+
+Pose List
+
+↓
+
+Pose Details
+
+↓
+
+Camera
+
+↓
+
+Overlay Ready
+
+========================================
+
+ANIMATIONS
+
+Fade In
+
+Fade Out
+
+Scale
+
+Smooth Overlay Transition
+
+No Lag
+
+========================================
+
+PERFORMANCE
+
+Support
+
+10,000+ SVG Templates
+
+Fast Loading
+
+Lazy Loading
+
+Cache Templates
+
+Memory Optimized
+
+Battery Friendly
+
+========================================
+
+LOCAL STORAGE
+
+Remember
+
+Last Overlay Position
+
+Last Opacity
+
+Last Scale
+
+Last Rotation
+
+Last Selected Pose
+
+========================================
+
+GESTURES
+
+Support
+
+Drag Overlay
+
+Pinch Zoom Overlay
+
+Rotate with Two Fingers
+
+Double Tap Reset
+
+Long Press Lock
+
+Smooth Gesture Handling
+
+========================================
+
+PREPARE FOR FUTURE AI
+
+Create architecture placeholders.
+
+Future Features
+
+Pose Alignment
+
+Body Detection
+
+Skeleton Detection
+
+Distance Detection
+
+Auto Capture
+
+Voice Guidance
+
+Green Alignment
+
+Red Alignment
+
+Yellow Alignment
+
+Do NOT implement yet.
+
+Only prepare architecture.
+
+========================================
+
+BUG PREVENTION
+
+Ensure
+
+No React Hook errors
+
+No Gesture conflicts
+
+No Camera crashes
+
+No Animation crashes
+
+No Memory leaks
+
+No TypeScript errors
+
+Everything must work perfectly inside Expo Preview.
+
+========================================
+
+FINAL OUTPUT
+
+Generate a complete production-quality SVG Overlay Engine with premium UI, smooth interactions, scalable architecture and offline functionality.
+
+The overlay system must feel professional and ready for future AI integration.

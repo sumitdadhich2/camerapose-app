@@ -1,5 +1,8 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform, Image } from 'react-native';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
+import {
+  View, Text, StyleSheet, TouchableOpacity, Platform,
+  Image, ScrollView, FlatList, ListRenderItemInfo,
+} from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useColors } from '../../hooks/useColors';
 import { SPACING, TYPOGRAPHY } from '../../constants/theme';
@@ -9,29 +12,119 @@ import * as Haptics from 'expo-haptics';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { BlurView } from 'expo-blur';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring, runOnJS, withSequence, withTiming } from 'react-native-reanimated';
+import Animated, {
+  useAnimatedStyle, useSharedValue,
+  withSpring, runOnJS, withSequence, withTiming,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PoseOverlayLayer } from '../../features/camera/PoseOverlayLayer';
-import { OverlayControls } from '../../features/camera/OverlayControls';
 import { CameraSettingsSheet } from '../../features/camera/CameraSettingsSheet';
 import { PhotoReviewModal } from '../../features/camera/PhotoReviewModal';
 import { CameraGrid } from '../../features/camera/CameraGrid';
-import { CameraPoseBottomSheet } from '../../features/camera/CameraPoseBottomSheet';
 import { PoseInfoSheet } from '../../features/camera/PoseInfoSheet';
-import { FloatingGuidePanel } from '../../features/camera/FloatingGuidePanel';
 import { useCameraSettingsStore } from '../../store/useCameraSettingsStore';
 import { useCapturedPhotosStore } from '../../store/useCapturedPhotosStore';
 import { useOverlayStore } from '../../store/useOverlayStore';
-import { useGuideStore } from '../../store/useGuideStore';
 import { PoseLibraryService } from '../../services/PoseLibraryService';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { PoseTemplate } from '../../types';
+import { getSvgOutline } from '../../features/overlay/svgOutlines';
 
-// Estimated height of capture controls row (modesRow + bottomControls)
-// Accounts for ~145px fixed height; safe area insets are added at render time
-const CAPTURE_CONTROLS_FIXED_H = 145;
+// ─── Sub-component defined at module level to avoid hook-order issues ──────────
+
+const PoseCardItem = React.memo<{
+  pose: PoseTemplate;
+  isActive: boolean;
+  onPress: (pose: PoseTemplate) => void;
+}>(({ pose, isActive, onPress }) => {
+  const pressScale = useSharedValue(1);
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pressScale.value }],
+  }));
+  const OutlineSvg = getSvgOutline(pose.svgOutline);
+
+  const handlePress = () => {
+    pressScale.value = withSequence(
+      withTiming(0.92, { duration: 70 }),
+      withSpring(1, { damping: 15 }),
+    );
+    onPress(pose);
+  };
+
+  return (
+    <TouchableOpacity onPress={handlePress} activeOpacity={1}>
+      <Animated.View style={[
+        poseCardStyles.card,
+        isActive && poseCardStyles.cardActive,
+        animStyle,
+      ]}>
+        <View style={[poseCardStyles.preview, { backgroundColor: pose.previewImage + '28' }]}>
+          <OutlineSvg width={54} height={70} color={pose.previewImage} />
+          {pose.premium && (
+            <View style={poseCardStyles.proBadge}>
+              <Text style={poseCardStyles.proText}>PRO</Text>
+            </View>
+          )}
+        </View>
+        <Text style={poseCardStyles.name} numberOfLines={2}>{pose.title}</Text>
+      </Animated.View>
+    </TouchableOpacity>
+  );
+});
+
+const poseCardStyles = StyleSheet.create({
+  card: {
+    width: 88,
+    borderRadius: 14,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+    padding: 5,
+    alignItems: 'center',
+  },
+  cardActive: {
+    borderColor: '#FFD54F',
+    backgroundColor: 'rgba(255,213,79,0.1)',
+  },
+  preview: {
+    width: 78,
+    height: 96,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 5,
+    position: 'relative',
+  },
+  proBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: '#FFD54F',
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  proText: {
+    fontFamily: TYPOGRAPHY.weights.bold,
+    fontSize: 8,
+    color: '#000',
+  },
+  name: {
+    color: '#fff',
+    fontFamily: TYPOGRAPHY.weights.medium,
+    fontSize: 10,
+    textAlign: 'center',
+    lineHeight: 13,
+    paddingHorizontal: 2,
+    marginBottom: 3,
+  },
+});
+
+// ─── Main Screen ───────────────────────────────────────────────────────────────
 
 export default function CameraScreen() {
+  // ── All hooks unconditionally at the top ────────────────────────────────────
   const { id } = useLocalSearchParams();
   const colors = useColors();
   const { addRecentTemplate } = useRecentStore();
@@ -41,35 +134,52 @@ export default function CameraScreen() {
   const cameraRef = useRef<CameraView>(null);
   const settings = useCameraSettingsStore();
   const { photos, loadPhotos } = useCapturedPhotosStore();
-  const { loadState: loadOverlayState, setLastPoseId, resetPosition, setScale, setRotation } = useOverlayStore();
-  const { activateGuide } = useGuideStore();
+  const {
+    loadState: loadOverlayState,
+    setLastPoseId,
+    resetPosition,
+    setScale,
+    setRotation,
+  } = useOverlayStore();
 
-  // Active pose — can be changed from the bottom sheet without navigating away
+  // Active pose — can switch without leaving the camera screen
   const [activePoseId, setActivePoseId] = useState<string | undefined>(
-    typeof id === 'string' ? id : undefined
+    typeof id === 'string' ? id : undefined,
   );
 
-  // Pose info modal
-  const [poseForInfo, setPoseForInfo] = useState<PoseTemplate | null>(null);
-  const [showPoseInfo, setShowPoseInfo] = useState(false);
-
+  // Camera controls
   const [facing, setFacing] = useState<'front' | 'back'>('back');
   const [flash, setFlash] = useState<'off' | 'on' | 'auto'>('off');
   const [zoom, setZoom] = useState(0);
-  const [isReady, setIsReady] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [reviewPhoto, setReviewPhoto] = useState<string | null>(null);
+  const [timer, setTimer] = useState<0 | 3 | 5 | 10>(0);
 
+  // Grid toggle (local – can be overridden from settings sheet)
+  const [gridEnabled, setGridEnabled] = useState(settings.grid);
+
+  // Category selection
+  const allCategories = useMemo(() => PoseLibraryService.getAllCategories(), []);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>(() => {
+    const initial = typeof id === 'string' ? PoseLibraryService.getPoseById(id) : undefined;
+    return initial?.categoryId ?? allCategories[0]?.id ?? 'c1';
+  });
+
+  // Pose info sheet
+  const [poseForInfo, setPoseForInfo] = useState<PoseTemplate | null>(null);
+  const [showPoseInfo, setShowPoseInfo] = useState(false);
+
+  // Animations — all defined unconditionally before any early return
   const captureScale = useSharedValue(1);
   const focusX = useSharedValue(0);
   const focusY = useSharedValue(0);
   const focusOpacity = useSharedValue(0);
 
-  const captureAnimatedStyle = useAnimatedStyle(() => ({
+  const captureAnimStyle = useAnimatedStyle(() => ({
     transform: [{ scale: captureScale.value }],
   }));
 
-  const focusAnimatedStyle = useAnimatedStyle(() => ({
+  const focusAnimStyle = useAnimatedStyle(() => ({
     opacity: focusOpacity.value,
     transform: [
       { translateX: focusX.value - 25 },
@@ -77,11 +187,17 @@ export default function CameraScreen() {
     ],
   }));
 
-  const activePose = activePoseId ? PoseLibraryService.getPoseById(activePoseId) : undefined;
+  // Derived values
+  const activePose = useMemo(
+    () => (activePoseId ? PoseLibraryService.getPoseById(activePoseId) : undefined),
+    [activePoseId],
+  );
   const outlineKey = activePose?.svgOutline ?? 'placeholder';
-
-  // Height above which the bottom sheet anchors
-  const captureControlsHeight = CAPTURE_CONTROLS_FIXED_H + insets.bottom;
+  const posesInCategory = useMemo(
+    () => PoseLibraryService.getPosesByCategory(selectedCategoryId),
+    [selectedCategoryId],
+  );
+  const lastPhoto = photos.length > 0 ? photos[0] : null;
 
   useEffect(() => {
     if (activePoseId) {
@@ -90,41 +206,59 @@ export default function CameraScreen() {
     }
     loadPhotos();
     loadOverlayState();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activePoseId]);
 
-  // ── Permission screens ──────────────────────────────────────────────────────
+  // ── Gestures (defined before early returns but only used in native branch) ──
+  const pinchGesture = Gesture.Pinch().onUpdate((e) => {
+    const next = Math.max(0, Math.min(1, zoom + e.velocity / 1000));
+    runOnJS(setZoom)(next);
+  });
+
+  const tapGesture = Gesture.Tap().onEnd((e) => {
+    focusX.value = e.x;
+    focusY.value = e.y;
+    focusOpacity.value = withSequence(
+      withTiming(1, { duration: 200 }),
+      withTiming(1, { duration: 700 }),
+      withTiming(0, { duration: 300 }),
+    );
+    runOnJS(Haptics.impactAsync)(Haptics.ImpactFeedbackStyle.Light);
+  });
+
+  const composed = Gesture.Simultaneous(pinchGesture, tapGesture);
+
+  // ── Permission screens (early returns AFTER all hooks) ──────────────────────
   if (!permission) {
-    return <View style={[styles.container, { backgroundColor: '#000' }]} />;
+    return <View style={{ flex: 1, backgroundColor: '#000' }} />;
   }
 
   if (!permission.granted) {
     return (
-      <View style={[styles.permissionContainer, { backgroundColor: colors.background }]}>
+      <View style={[styles.permContainer, { backgroundColor: colors.background }]}>
         <Ionicons name="camera" size={64} color={colors.primary} />
-        <Text style={[styles.permissionTitle, { color: colors.foreground }]}>Camera Access Required</Text>
-        <Text style={[styles.permissionText, { color: colors.mutedForeground }]}>
+        <Text style={[styles.permTitle, { color: colors.foreground }]}>Camera Access Required</Text>
+        <Text style={[styles.permText, { color: colors.mutedForeground }]}>
           Pose Master AI needs camera access so you can line yourself up with pose templates.
         </Text>
         <PrimaryButton title="Grant Permission" onPress={requestPermission} />
         <TouchableOpacity style={{ marginTop: SPACING.md }} onPress={() => router.back()}>
-          <Text style={{ color: colors.mutedForeground, fontFamily: TYPOGRAPHY.weights.medium }}>Cancel</Text>
+          <Text style={{ color: colors.mutedForeground, fontFamily: TYPOGRAPHY.weights.medium }}>
+            Cancel
+          </Text>
         </TouchableOpacity>
       </View>
     );
   }
 
-  // ── Handlers ────────────────────────────────────────────────────────────────
-  const toggleCameraFacing = () => {
-    setFacing(current => (current === 'back' ? 'front' : 'back'));
+  // ── Handlers ─────────────────────────────────────────────────────────────────
+  const cycleFlash = () => {
+    setFlash(c => (c === 'off' ? 'auto' : c === 'auto' ? 'on' : 'off'));
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
-  const cycleFlash = () => {
-    setFlash(current => {
-      if (current === 'off') return 'auto';
-      if (current === 'auto') return 'on';
-      return 'off';
-    });
+  const cycleTimer = () => {
+    setTimer(c => (c === 0 ? 3 : c === 3 ? 5 : c === 5 ? 10 : 0));
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
@@ -132,8 +266,8 @@ export default function CameraScreen() {
     if (!cameraRef.current) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     captureScale.value = withSequence(
-      withTiming(0.8, { duration: 100 }),
-      withSpring(1)
+      withTiming(0.82, { duration: 90 }),
+      withSpring(1, { damping: 14 }),
     );
     try {
       const photo = await cameraRef.current.takePictureAsync({
@@ -145,81 +279,59 @@ export default function CameraScreen() {
     }
   };
 
-  const getFlashIcon = () => {
+  const getFlashIcon = (): React.ComponentProps<typeof Ionicons>['name'] => {
     if (flash === 'on') return 'flash';
     if (flash === 'auto') return 'flash-outline';
     return 'flash-off-outline';
   };
 
-  // Opens the pose info sheet from the bottom sheet carousel
-  const handlePoseInfoRequest = (pose: PoseTemplate) => {
+  const handlePoseCardPress = (pose: PoseTemplate) => {
     setPoseForInfo(pose);
     setShowPoseInfo(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
-  // Called from bottom sheet "Start Guide" button (for current active pose)
-  const handleStartGuideCurrentPose = () => {
-    if (!activePose) return;
-    startGuideForPose(activePose);
-  };
-
-  // Called from PoseInfoSheet "Start Pose Guide" button
-  const handleStartGuideFromInfo = (pose: PoseTemplate) => {
+  const handleStartGuide = (pose: PoseTemplate) => {
     setShowPoseInfo(false);
     setPoseForInfo(null);
-    // Switch active pose to the selected one
     setActivePoseId(pose.id);
     addRecentTemplate(pose.id);
     setLastPoseId(pose.id);
-    // Center the overlay for the new pose
     resetPosition();
     setScale(1);
     setRotation(0);
-    // Start the step guide
-    startGuideForPose(pose);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
-  const startGuideForPose = (pose: PoseTemplate) => {
-    activateGuide(pose.instructions, pose.title);
-  };
+  const renderPoseCard = ({ item }: ListRenderItemInfo<PoseTemplate>) => (
+    <PoseCardItem
+      pose={item}
+      isActive={item.id === activePoseId}
+      onPress={handlePoseCardPress}
+    />
+  );
 
-  // ── Gestures ─────────────────────────────────────────────────────────────────
-  const pinchGesture = Gesture.Pinch().onUpdate((e) => {
-    const newZoom = Math.max(0, Math.min(1, zoom + e.velocity / 1000));
-    runOnJS(setZoom)(newZoom);
-  });
+  // ── Bottom section height for safe-area-aware padding ───────────────────────
+  const bottomSectionPaddingBottom = Math.max(insets.bottom, 8);
 
-  const tapGesture = Gesture.Tap().onEnd((e) => {
-    focusX.value = e.x;
-    focusY.value = e.y;
-    focusOpacity.value = withSequence(
-      withTiming(1, { duration: 200 }),
-      withTiming(1, { duration: 800 }),
-      withTiming(0, { duration: 300 })
-    );
-    runOnJS(Haptics.impactAsync)(Haptics.ImpactFeedbackStyle.Light);
-  });
-
-  const composed = Gesture.Simultaneous(pinchGesture, tapGesture);
-
-  const lastPhoto = photos.length > 0 ? photos[0] : null;
-
-  // ── Render ──────────────────────────────────────────────────────────────────
+  // ── Render ───────────────────────────────────────────────────────────────────
   return (
-    <GestureHandlerRootView style={styles.container}>
-      {Platform.OS === 'web' ? (
+    <GestureHandlerRootView style={styles.root}>
+
+      {/* ── Web fallback ── */}
+      {Platform.OS === 'web' && (
         <View style={styles.webFallback}>
-          <Ionicons name="camera-outline" size={64} color="#555" />
-          <Text style={{ color: '#888', marginTop: 16 }}>Camera not fully supported on Web.</Text>
-          <Text style={{ color: '#888' }}>Please use Expo Go on a real device.</Text>
+          <Ionicons name="camera-outline" size={64} color="#444" />
+          <Text style={styles.webFallbackText}>Camera preview requires Expo Go on a device.</Text>
           <PoseOverlayLayer poseOutlineKey={outlineKey} />
-          <OverlayControls />
-          <TouchableOpacity style={styles.webBackButton} onPress={() => router.back()}>
-            <Ionicons name="close" size={28} color="#ffffff" />
+          <TouchableOpacity style={styles.webBack} onPress={() => router.back()}>
+            <Ionicons name="close" size={26} color="#fff" />
           </TouchableOpacity>
         </View>
-      ) : (
+      )}
+
+      {/* ── Native camera ── */}
+      {Platform.OS !== 'web' && (
         <GestureDetector gesture={composed}>
           <CameraView
             ref={cameraRef}
@@ -229,94 +341,149 @@ export default function CameraScreen() {
             zoom={zoom}
             animateShutter={false}
             mirror={settings.mirrorSelfie && facing === 'front'}
-            onCameraReady={() => setIsReady(true)}
           >
-            <CameraGrid visible={settings.grid} />
+            <CameraGrid visible={gridEnabled} />
             <PoseOverlayLayer poseOutlineKey={outlineKey} />
-
-            {/* Tap-to-focus ring */}
-            <Animated.View style={[styles.focusRing, focusAnimatedStyle]} />
-
-            {/* Overlay Controls FAB */}
-            <OverlayControls />
-
-            {/* Floating Guide Panel */}
-            <FloatingGuidePanel />
-
-            {/* Top Chrome */}
-            <BlurView
-              intensity={30}
-              tint="dark"
-              style={[styles.topControls, { paddingTop: Math.max(insets.top, 20) }]}
-            >
-              <TouchableOpacity style={styles.iconButton} onPress={() => router.back()}>
-                <Ionicons name="close" size={28} color="#ffffff" />
-              </TouchableOpacity>
-
-              <View style={styles.centerTopControls}>
-                <TouchableOpacity style={styles.iconButton} onPress={cycleFlash}>
-                  <Ionicons name={getFlashIcon()} size={24} color="#ffffff" />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.iconButton}>
-                  <Text style={styles.hdrText}>HDR</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.iconButton}>
-                  <Ionicons name="leaf-outline" size={20} color="#4CAF50" />
-                </TouchableOpacity>
-              </View>
-
-              <TouchableOpacity style={styles.iconButton} onPress={() => setShowSettings(true)}>
-                <Ionicons name="options-outline" size={28} color="#ffffff" />
-              </TouchableOpacity>
-            </BlurView>
-
-            {/* Bottom Controls */}
-            <View style={[styles.bottomContainer, { paddingBottom: Math.max(insets.bottom, 20) }]}>
-              <View style={styles.modesRow}>
-                <Text style={[styles.modeText, styles.modeTextActive]}>PHOTO</Text>
-                <Text style={styles.modeText}>VIDEO</Text>
-                <Text style={styles.modeText}>PORTRAIT</Text>
-              </View>
-
-              <BlurView intensity={30} tint="dark" style={styles.bottomControls}>
-                <TouchableOpacity
-                  style={styles.galleryButton}
-                  onPress={() => router.push('/(tabs)/gallery')}
-                >
-                  {lastPhoto ? (
-                    <Image source={{ uri: lastPhoto.uri }} style={styles.galleryImage} />
-                  ) : (
-                    <Ionicons name="images" size={24} color="#ffffff" />
-                  )}
-                </TouchableOpacity>
-
-                <Animated.View style={[styles.captureButtonContainer, captureAnimatedStyle]}>
-                  <TouchableOpacity
-                    style={styles.captureButton}
-                    onPress={handleCapture}
-                    activeOpacity={1}
-                  >
-                    <View style={styles.captureInner} />
-                  </TouchableOpacity>
-                </Animated.View>
-
-                <TouchableOpacity style={styles.flipButton} onPress={toggleCameraFacing}>
-                  <Ionicons name="camera-reverse" size={28} color="#ffffff" />
-                </TouchableOpacity>
-              </BlurView>
-            </View>
-
-            {/* Draggable Pose Bottom Sheet — sits above capture controls */}
-            <CameraPoseBottomSheet
-              currentPoseId={activePoseId}
-              captureControlsHeight={captureControlsHeight}
-              onPoseInfoRequest={handlePoseInfoRequest}
-              onStartGuide={handleStartGuideCurrentPose}
-            />
+            <Animated.View style={[styles.focusRing, focusAnimStyle]} />
           </CameraView>
         </GestureDetector>
       )}
 
+      {/* ── Top Bar ── (rendered outside CameraView so it doesn't affect camera layout) */}
+      <BlurView
+        intensity={Platform.OS === 'web' ? 0 : 35}
+        tint="dark"
+        style={[styles.topBar, { paddingTop: Math.max(insets.top + 6, 20) }]}
+      >
+        {/* Back */}
+        <TouchableOpacity style={styles.topBtn} onPress={() => router.back()}>
+          <Ionicons name="chevron-back" size={24} color="#fff" />
+        </TouchableOpacity>
+
+        {/* Center controls */}
+        <View style={styles.topCenter}>
+          {/* Flash */}
+          <TouchableOpacity style={styles.topBtn} onPress={cycleFlash}>
+            <Ionicons name={getFlashIcon()} size={22} color={flash !== 'off' ? '#FFD54F' : '#fff'} />
+          </TouchableOpacity>
+
+          {/* Timer */}
+          <TouchableOpacity style={styles.topBtn} onPress={cycleTimer}>
+            {timer === 0 ? (
+              <Ionicons name="timer-outline" size={22} color="rgba(255,255,255,0.5)" />
+            ) : (
+              <View style={styles.timerBadge}>
+                <Text style={styles.timerText}>{timer}s</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+
+          {/* Grid */}
+          <TouchableOpacity
+            style={styles.topBtn}
+            onPress={() => setGridEnabled(g => !g)}
+          >
+            <Ionicons
+              name="grid-outline"
+              size={22}
+              color={gridEnabled ? '#FFD54F' : 'rgba(255,255,255,0.5)'}
+            />
+          </TouchableOpacity>
+        </View>
+
+        {/* Settings */}
+        <TouchableOpacity style={styles.topBtn} onPress={() => setShowSettings(true)}>
+          <Ionicons name="settings-outline" size={22} color="#fff" />
+        </TouchableOpacity>
+      </BlurView>
+
+      {/* ── Bottom Section: capture + categories + poses ── */}
+      <View style={[styles.bottomSection, { paddingBottom: bottomSectionPaddingBottom }]}>
+
+        {/* Capture row */}
+        <View style={styles.captureRow}>
+          {/* Gallery */}
+          <TouchableOpacity
+            style={styles.sideBtn}
+            onPress={() => router.push('/(tabs)/gallery')}
+          >
+            {lastPhoto ? (
+              <Image source={{ uri: lastPhoto.uri }} style={styles.galleryThumb} />
+            ) : (
+              <Ionicons name="images-outline" size={26} color="#fff" />
+            )}
+          </TouchableOpacity>
+
+          {/* Capture */}
+          <Animated.View style={captureAnimStyle}>
+            <TouchableOpacity
+              style={styles.captureBtn}
+              onPress={handleCapture}
+              activeOpacity={0.9}
+            >
+              <View style={styles.captureInner} />
+            </TouchableOpacity>
+          </Animated.View>
+
+          {/* Flip */}
+          <TouchableOpacity
+            style={styles.sideBtn}
+            onPress={() => {
+              setFacing(f => (f === 'back' ? 'front' : 'back'));
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            }}
+          >
+            <Ionicons name="camera-reverse-outline" size={28} color="#fff" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Divider */}
+        <View style={styles.divider} />
+
+        {/* Category selector */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoryRow}
+        >
+          {allCategories.map(cat => {
+            const isSelected = cat.id === selectedCategoryId;
+            return (
+              <TouchableOpacity
+                key={cat.id}
+                style={styles.categoryTab}
+                onPress={() => setSelectedCategoryId(cat.id)}
+                activeOpacity={0.75}
+              >
+                <Text style={[styles.categoryTabText, isSelected && styles.categoryTabTextActive]}>
+                  {cat.name}
+                </Text>
+                {isSelected && <View style={styles.categoryIndicator} />}
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
+        {/* Pose cards */}
+        {posesInCategory.length > 0 ? (
+          <FlatList
+            horizontal
+            data={posesInCategory}
+            keyExtractor={item => item.id}
+            renderItem={renderPoseCard}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.poseRow}
+            initialNumToRender={5}
+            maxToRenderPerBatch={5}
+          />
+        ) : (
+          <View style={styles.emptyPoses}>
+            <Text style={styles.emptyPosesText}>No poses in this category yet</Text>
+          </View>
+        )}
+      </View>
+
+      {/* ── Modals ── */}
       <CameraSettingsSheet visible={showSettings} onClose={() => setShowSettings(false)} />
 
       <PhotoReviewModal
@@ -327,165 +494,223 @@ export default function CameraScreen() {
         onClose={() => setReviewPhoto(null)}
       />
 
-      {/* Pose Info Sheet — rendered outside CameraView so it covers fully */}
       <PoseInfoSheet
         pose={poseForInfo}
         visible={showPoseInfo}
         onClose={() => { setShowPoseInfo(false); setPoseForInfo(null); }}
-        onStartGuide={handleStartGuideFromInfo}
+        onStartGuide={handleStartGuide}
       />
     </GestureHandlerRootView>
   );
 }
 
+// ─── Styles ────────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
-    backgroundColor: '#000000',
+    backgroundColor: '#000',
   },
+
+  // Web fallback
   webFallback: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#000',
+    backgroundColor: '#0d0d0d',
   },
-  webBackButton: {
+  webFallbackText: {
+    color: '#666',
+    fontFamily: TYPOGRAPHY.weights.regular,
+    fontSize: TYPOGRAPHY.sizes.sm,
+    marginTop: SPACING.md,
+    textAlign: 'center',
+    paddingHorizontal: SPACING.xl,
+  },
+  webBack: {
     position: 'absolute',
-    top: 50,
+    top: 56,
     left: SPACING.md,
     width: 44,
     height: 44,
+    alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  // Focus ring
+  focusRing: {
+    position: 'absolute',
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    borderWidth: 2,
+    borderColor: '#FFD54F',
+    left: 0,
+    top: 0,
+  },
+
+  // ── Top bar ──
+  topBar: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.sm,
+    paddingBottom: SPACING.sm,
+    zIndex: 20,
+  },
+  topCenter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  topBtn: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 22,
+  },
+  timerBadge: {
+    backgroundColor: '#FFD54F',
+    borderRadius: 10,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+  },
+  timerText: {
+    color: '#000',
+    fontFamily: TYPOGRAPHY.weights.bold,
+    fontSize: 11,
+  },
+
+  // ── Bottom section ──
+  bottomSection: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0,0,0,0.88)',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(255,255,255,0.08)',
+    zIndex: 20,
+  },
+
+  // Capture row
+  captureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.xl,
+    paddingTop: SPACING.md,
+    paddingBottom: SPACING.sm,
+  },
+  sideBtn: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  galleryThumb: {
+    width: '100%',
+    height: '100%',
+  },
+  captureBtn: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    borderWidth: 3,
+    borderColor: '#FFD54F',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  captureInner: {
+    width: 62,
+    height: 62,
+    borderRadius: 31,
+    backgroundColor: '#FFD54F',
+  },
+
+  // Divider
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    marginHorizontal: SPACING.lg,
+    marginBottom: 2,
+  },
+
+  // Category selector
+  categoryRow: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 8,
+    gap: 4,
+  },
+  categoryTab: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
     alignItems: 'center',
   },
-  permissionContainer: {
+  categoryTabText: {
+    color: 'rgba(255,255,255,0.4)',
+    fontFamily: TYPOGRAPHY.weights.medium,
+    fontSize: TYPOGRAPHY.sizes.xs,
+    letterSpacing: 0.3,
+  },
+  categoryTabTextActive: {
+    color: '#FFD54F',
+    fontFamily: TYPOGRAPHY.weights.semiBold,
+  },
+  categoryIndicator: {
+    position: 'absolute',
+    bottom: 1,
+    left: 14,
+    right: 14,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: '#FFD54F',
+  },
+
+  // Pose cards
+  poseRow: {
+    paddingHorizontal: SPACING.md,
+    paddingTop: 4,
+    paddingBottom: 8,
+    gap: SPACING.sm,
+  },
+  emptyPoses: {
+    height: 116,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyPosesText: {
+    color: 'rgba(255,255,255,0.25)',
+    fontFamily: TYPOGRAPHY.weights.regular,
+    fontSize: TYPOGRAPHY.sizes.sm,
+  },
+
+  // Permission screen
+  permContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: SPACING.xl,
   },
-  permissionTitle: {
+  permTitle: {
     fontFamily: TYPOGRAPHY.weights.bold,
     fontSize: TYPOGRAPHY.sizes.xl,
     marginTop: SPACING.lg,
     marginBottom: SPACING.sm,
   },
-  permissionText: {
+  permText: {
     fontFamily: TYPOGRAPHY.weights.regular,
     fontSize: TYPOGRAPHY.sizes.md,
     textAlign: 'center',
     marginBottom: SPACING.xl,
     lineHeight: 24,
-  },
-  topControls: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: SPACING.md,
-    paddingBottom: SPACING.sm,
-    zIndex: 10,
-  },
-  centerTopControls: {
-    flexDirection: 'row',
-    gap: SPACING.md,
-    alignItems: 'center',
-  },
-  iconButton: {
-    width: 44,
-    height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  hdrText: {
-    color: '#fff',
-    fontFamily: TYPOGRAPHY.weights.bold,
-    fontSize: 12,
-    opacity: 0.7,
-  },
-  bottomContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    zIndex: 20,
-  },
-  modesRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: SPACING.xl,
-    paddingVertical: SPACING.sm,
-  },
-  modeText: {
-    color: '#fff',
-    fontFamily: TYPOGRAPHY.weights.medium,
-    fontSize: 12,
-    opacity: 0.5,
-    letterSpacing: 1,
-  },
-  modeTextActive: {
-    color: '#FFD54F',
-    opacity: 1,
-    fontFamily: TYPOGRAPHY.weights.bold,
-  },
-  bottomControls: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.xl,
-    paddingVertical: SPACING.md,
-    paddingBottom: SPACING.xl,
-  },
-  galleryButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
-  },
-  galleryImage: {
-    width: '100%',
-    height: '100%',
-  },
-  captureButtonContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  captureButton: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    borderWidth: 4,
-    borderColor: '#FFD54F',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  captureInner: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#FFD54F',
-  },
-  flipButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  focusRing: {
-    position: 'absolute',
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    borderWidth: 2,
-    borderColor: '#FFD54F',
-    left: 0,
-    top: 0,
   },
 });

@@ -3,6 +3,18 @@ name: Camera flow architecture
 description: How the in-camera pose selection, bottom sheet, pose info modal, and step guide are structured.
 ---
 
+## Bottom section is static absolute, NOT a draggable sheet
+The pose category tabs + pose cards are in a static `View` positioned `position:'absolute', bottom:0`. There is NO `translateY` shared value, no spring animation, no pan gesture on this container. It renders once and stays fixed. Draggable sheets caused layout jitter and were removed.
+
+**Why:** Any `useSharedValue` driven `translateY` on a large container (e.g. a bottom sheet) can jitter on Android because the JS thread and UI thread briefly disagree on position during mount. Static absolute position has no this problem.
+**How to apply:** If a future "slide-up" behavior is needed for this section, use a Modal instead — never re-introduce a translated container inside the live camera layout.
+
+## PoseCardItem is defined at module level with its own hooks
+The per-card press animation uses `useSharedValue` + `useAnimatedStyle` inside `PoseCardItem`, which is defined as a `React.memo` component at the module top level (not inside the screen function). This avoids hook-ordering problems when the screen has conditional early returns.
+
+**Why:** Hooks inside a component defined inside another component's render function can cause "rendered more hooks than previous" errors if the parent's conditional branches change.
+**How to apply:** Any sub-component that needs hooks must be a top-level function or exported component, never an inline arrow function inside the render.
+
 ## Active pose is mutable local state, not just a route param
 `app/camera/[id].tsx` initialises `activePoseId` from the route param but stores it in `useState`. Selecting a new pose from the bottom sheet calls `setActivePoseId(pose.id)` — no navigation required.
 

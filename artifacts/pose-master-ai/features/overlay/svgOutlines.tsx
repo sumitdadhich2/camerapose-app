@@ -21,7 +21,7 @@ export type SvgOutlineProps = {
   color: string;
 };
 
-const STROKE_WIDTH = 3;
+const STROKE_WIDTH = 1.5;
 
 export const StandingOutline: React.FC<SvgOutlineProps> = ({ width, height, color }) => (
   <Svg width={width} height={height} viewBox="0 0 200 400" fill="none">

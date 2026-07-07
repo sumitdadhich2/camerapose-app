@@ -18,6 +18,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PoseOverlayLayer } from '../../features/camera/PoseOverlayLayer';
+import { FloatingGuidePanel } from '../../features/camera/FloatingGuidePanel';
 import { CameraSettingsSheet } from '../../features/camera/CameraSettingsSheet';
 import { PhotoReviewModal } from '../../features/camera/PhotoReviewModal';
 import { CameraGrid } from '../../features/camera/CameraGrid';
@@ -25,12 +26,41 @@ import { PoseInfoSheet } from '../../features/camera/PoseInfoSheet';
 import { useCameraSettingsStore } from '../../store/useCameraSettingsStore';
 import { useCapturedPhotosStore } from '../../store/useCapturedPhotosStore';
 import { useOverlayStore } from '../../store/useOverlayStore';
+import { useGuideStore } from '../../store/useGuideStore';
 import { PoseLibraryService } from '../../services/PoseLibraryService';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { PoseTemplate } from '../../types';
 import { getSvgOutline } from '../../features/overlay/svgOutlines';
 
-// ─── Sub-component defined at module level to avoid hook-order issues ──────────
+// ─── Simple guide instructions ──────────────────────────────────────────────
+
+/**
+ * Build a short sequence of single-phrase direction chips for the guide mode.
+ * These are intentionally simple — no meters, no percentages, no jargon.
+ */
+function buildGuideSteps(pose: PoseTemplate): string[] {
+  const base: string[] = [
+    'Align yourself with the outline',
+    'Step back a little',
+    'Stand up straight',
+    'Face the camera',
+    'Relax your shoulders',
+    'Match the pose outline',
+    'Hold still',
+    'Perfect Pose ✓',
+  ];
+
+  // Prepend a distance hint based on the pose's recommended distance
+  const dist = pose.recommendedDistance?.toLowerCase() ?? '';
+  const distHint =
+    dist.includes('close') ? 'Come closer' :
+    dist.includes('far')   ? 'Move back a little' :
+    'Step back a little';
+
+  return [distHint, ...base.slice(1)];
+}
+
+// ─── Sub-component defined at module level to avoid hook-order issues ────────
 
 const PoseCardItem = React.memo<{
   pose: PoseTemplate;
@@ -58,7 +88,7 @@ const PoseCardItem = React.memo<{
         isActive && poseCardStyles.cardActive,
         animStyle,
       ]}>
-        <View style={[poseCardStyles.preview, { backgroundColor: pose.previewImage + '28' }]}>
+        <View style={[poseCardStyles.preview, { backgroundColor: pose.previewImage + '22' }]}>
           <OutlineSvg width={54} height={70} color={pose.previewImage} />
           {pose.premium && (
             <View style={poseCardStyles.proBadge}>
@@ -77,15 +107,15 @@ const poseCardStyles = StyleSheet.create({
     width: 88,
     borderRadius: 14,
     overflow: 'hidden',
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.1)',
     padding: 5,
     alignItems: 'center',
   },
   cardActive: {
     borderColor: '#FFD54F',
-    backgroundColor: 'rgba(255,213,79,0.1)',
+    backgroundColor: 'rgba(255,213,79,0.08)',
   },
   preview: {
     width: 78,
@@ -111,7 +141,7 @@ const poseCardStyles = StyleSheet.create({
     color: '#000',
   },
   name: {
-    color: '#fff',
+    color: 'rgba(255,255,255,0.85)',
     fontFamily: TYPOGRAPHY.weights.medium,
     fontSize: 10,
     textAlign: 'center',
@@ -121,10 +151,10 @@ const poseCardStyles = StyleSheet.create({
   },
 });
 
-// ─── Main Screen ───────────────────────────────────────────────────────────────
+// ─── Main Screen ─────────────────────────────────────────────────────────────
 
 export default function CameraScreen() {
-  // ── All hooks unconditionally at the top ────────────────────────────────────
+  // ── All hooks unconditionally at the top ──────────────────────────────────
   const { id } = useLocalSearchParams();
   const colors = useColors();
   const { addRecentTemplate } = useRecentStore();
@@ -141,8 +171,9 @@ export default function CameraScreen() {
     setScale,
     setRotation,
   } = useOverlayStore();
+  const { activateGuide, deactivateGuide } = useGuideStore();
 
-  // Active pose — can switch without leaving the camera screen
+  // Active pose
   const [activePoseId, setActivePoseId] = useState<string | undefined>(
     typeof id === 'string' ? id : undefined,
   );
@@ -155,7 +186,7 @@ export default function CameraScreen() {
   const [reviewPhoto, setReviewPhoto] = useState<string | null>(null);
   const [timer, setTimer] = useState<0 | 3 | 5 | 10>(0);
 
-  // Grid toggle (local – can be overridden from settings sheet)
+  // Grid toggle
   const [gridEnabled, setGridEnabled] = useState(settings.grid);
 
   // Category selection
@@ -209,7 +240,15 @@ export default function CameraScreen() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activePoseId]);
 
-  // ── Gestures (defined before early returns but only used in native branch) ──
+  // Deactivate guide when leaving the screen
+  useEffect(() => {
+    return () => {
+      deactivateGuide();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Gestures ──────────────────────────────────────────────────────────────
   const pinchGesture = Gesture.Pinch().onUpdate((e) => {
     const next = Math.max(0, Math.min(1, zoom + e.velocity / 1000));
     runOnJS(setZoom)(next);
@@ -228,7 +267,7 @@ export default function CameraScreen() {
 
   const composed = Gesture.Simultaneous(pinchGesture, tapGesture);
 
-  // ── Permission screens (early returns AFTER all hooks) ──────────────────────
+  // ── Permission screens (early returns AFTER all hooks) ────────────────────
   if (!permission) {
     return <View style={{ flex: 1, backgroundColor: '#000' }} />;
   }
@@ -251,7 +290,7 @@ export default function CameraScreen() {
     );
   }
 
-  // ── Handlers ─────────────────────────────────────────────────────────────────
+  // ── Handlers ──────────────────────────────────────────────────────────────
   const cycleFlash = () => {
     setFlash(c => (c === 'off' ? 'auto' : c === 'auto' ? 'on' : 'off'));
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -300,6 +339,8 @@ export default function CameraScreen() {
     resetPosition();
     setScale(1);
     setRotation(0);
+    // Start guide with simple one-phrase instructions
+    activateGuide(buildGuideSteps(pose), pose.title);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
@@ -311,47 +352,52 @@ export default function CameraScreen() {
     />
   );
 
-  // ── Bottom section height for safe-area-aware padding ───────────────────────
   const bottomSectionPaddingBottom = Math.max(insets.bottom, 8);
 
-  // ── Render ───────────────────────────────────────────────────────────────────
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <GestureHandlerRootView style={styles.root}>
 
       {/* ── Web fallback ── */}
       {Platform.OS === 'web' && (
-        <View style={styles.webFallback}>
-          <Ionicons name="camera-outline" size={64} color="#444" />
-          <Text style={styles.webFallbackText}>Camera preview requires Expo Go on a device.</Text>
+        <View style={StyleSheet.absoluteFill}>
+          <View style={styles.webFallback}>
+            <Ionicons name="camera-outline" size={56} color="#333" />
+            <Text style={styles.webFallbackText}>Camera preview requires Expo Go on a device.</Text>
+          </View>
           <PoseOverlayLayer poseOutlineKey={outlineKey} />
-          <TouchableOpacity style={styles.webBack} onPress={() => router.back()}>
-            <Ionicons name="close" size={26} color="#fff" />
+          <TouchableOpacity style={[styles.webBack, { top: Math.max(insets.top + 12, 56) }]} onPress={() => router.back()}>
+            <Ionicons name="close" size={22} color="#fff" />
           </TouchableOpacity>
         </View>
       )}
 
-      {/* ── Native camera ── */}
+      {/* ── Native camera — fills entire screen ── */}
       {Platform.OS !== 'web' && (
         <GestureDetector gesture={composed}>
-          <CameraView
-            ref={cameraRef}
-            style={StyleSheet.absoluteFill}
-            facing={facing}
-            flash={flash}
-            zoom={zoom}
-            animateShutter={false}
-            mirror={settings.mirrorSelfie && facing === 'front'}
-          >
+          <View style={StyleSheet.absoluteFill}>
+            <CameraView
+              ref={cameraRef}
+              style={StyleSheet.absoluteFill}
+              facing={facing}
+              flash={flash}
+              zoom={zoom}
+              animateShutter={false}
+              mirror={settings.mirrorSelfie && facing === 'front'}
+            />
             <CameraGrid visible={gridEnabled} />
             <PoseOverlayLayer poseOutlineKey={outlineKey} />
             <Animated.View style={[styles.focusRing, focusAnimStyle]} />
-          </CameraView>
+          </View>
         </GestureDetector>
       )}
 
-      {/* ── Top Bar ── (rendered outside CameraView so it doesn't affect camera layout) */}
+      {/* ── Instruction chip (guide mode) ── */}
+      <FloatingGuidePanel />
+
+      {/* ── Top Bar ── */}
       <BlurView
-        intensity={Platform.OS === 'web' ? 0 : 35}
+        intensity={Platform.OS === 'web' ? 0 : 30}
         tint="dark"
         style={[styles.topBar, { paddingTop: Math.max(insets.top + 6, 20) }]}
       >
@@ -364,13 +410,13 @@ export default function CameraScreen() {
         <View style={styles.topCenter}>
           {/* Flash */}
           <TouchableOpacity style={styles.topBtn} onPress={cycleFlash}>
-            <Ionicons name={getFlashIcon()} size={22} color={flash !== 'off' ? '#FFD54F' : '#fff'} />
+            <Ionicons name={getFlashIcon()} size={22} color={flash !== 'off' ? '#FFD54F' : 'rgba(255,255,255,0.7)'} />
           </TouchableOpacity>
 
           {/* Timer */}
           <TouchableOpacity style={styles.topBtn} onPress={cycleTimer}>
             {timer === 0 ? (
-              <Ionicons name="timer-outline" size={22} color="rgba(255,255,255,0.5)" />
+              <Ionicons name="timer-outline" size={22} color="rgba(255,255,255,0.4)" />
             ) : (
               <View style={styles.timerBadge}>
                 <Text style={styles.timerText}>{timer}s</Text>
@@ -386,14 +432,14 @@ export default function CameraScreen() {
             <Ionicons
               name="grid-outline"
               size={22}
-              color={gridEnabled ? '#FFD54F' : 'rgba(255,255,255,0.5)'}
+              color={gridEnabled ? '#FFD54F' : 'rgba(255,255,255,0.4)'}
             />
           </TouchableOpacity>
         </View>
 
         {/* Settings */}
         <TouchableOpacity style={styles.topBtn} onPress={() => setShowSettings(true)}>
-          <Ionicons name="settings-outline" size={22} color="#fff" />
+          <Ionicons name="settings-outline" size={22} color="rgba(255,255,255,0.7)" />
         </TouchableOpacity>
       </BlurView>
 
@@ -410,7 +456,7 @@ export default function CameraScreen() {
             {lastPhoto ? (
               <Image source={{ uri: lastPhoto.uri }} style={styles.galleryThumb} />
             ) : (
-              <Ionicons name="images-outline" size={26} color="#fff" />
+              <Ionicons name="images-outline" size={26} color="rgba(255,255,255,0.7)" />
             )}
           </TouchableOpacity>
 
@@ -433,7 +479,7 @@ export default function CameraScreen() {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             }}
           >
-            <Ionicons name="camera-reverse-outline" size={28} color="#fff" />
+            <Ionicons name="camera-reverse-outline" size={28} color="rgba(255,255,255,0.7)" />
           </TouchableOpacity>
         </View>
 
@@ -504,7 +550,7 @@ export default function CameraScreen() {
   );
 }
 
-// ─── Styles ────────────────────────────────────────────────────────────────────
+// ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   root: {
@@ -517,10 +563,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#0d0d0d',
+    backgroundColor: '#0a0a0a',
   },
   webFallbackText: {
-    color: '#666',
+    color: '#444',
     fontFamily: TYPOGRAPHY.weights.regular,
     fontSize: TYPOGRAPHY.sizes.sm,
     marginTop: SPACING.md,
@@ -529,21 +575,22 @@ const styles = StyleSheet.create({
   },
   webBack: {
     position: 'absolute',
-    top: 56,
     left: SPACING.md,
     width: 44,
     height: 44,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 22,
   },
 
   // Focus ring
   focusRing: {
     position: 'absolute',
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    borderWidth: 2,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 1.5,
     borderColor: '#FFD54F',
     left: 0,
     top: 0,
@@ -558,21 +605,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: SPACING.sm,
+    paddingHorizontal: SPACING.xs,
     paddingBottom: SPACING.sm,
     zIndex: 20,
   },
   topCenter: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 0,
   },
   topBtn: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 22,
+    borderRadius: 24,
   },
   timerBadge: {
     backgroundColor: '#FFD54F',
@@ -592,9 +639,9 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(0,0,0,0.88)',
+    backgroundColor: 'rgba(0,0,0,0.92)',
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(255,255,255,0.08)',
+    borderTopColor: 'rgba(255,255,255,0.06)',
     zIndex: 20,
   },
 
@@ -608,10 +655,10 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING.sm,
   },
   sideBtn: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(255,255,255,0.1)',
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
@@ -619,27 +666,28 @@ const styles = StyleSheet.create({
   galleryThumb: {
     width: '100%',
     height: '100%',
+    borderRadius: 28,
   },
   captureBtn: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
-    borderWidth: 3,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 2.5,
     borderColor: '#FFD54F',
     alignItems: 'center',
     justifyContent: 'center',
   },
   captureInner: {
-    width: 62,
-    height: 62,
-    borderRadius: 31,
+    width: 66,
+    height: 66,
+    borderRadius: 33,
     backgroundColor: '#FFD54F',
   },
 
   // Divider
   divider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(255,255,255,0.07)',
     marginHorizontal: SPACING.lg,
     marginBottom: 2,
   },
@@ -651,12 +699,13 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   categoryTab: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
     alignItems: 'center',
+    minWidth: 48,
   },
   categoryTabText: {
-    color: 'rgba(255,255,255,0.4)',
+    color: 'rgba(255,255,255,0.35)',
     fontFamily: TYPOGRAPHY.weights.medium,
     fontSize: TYPOGRAPHY.sizes.xs,
     letterSpacing: 0.3,
@@ -668,8 +717,8 @@ const styles = StyleSheet.create({
   categoryIndicator: {
     position: 'absolute',
     bottom: 1,
-    left: 14,
-    right: 14,
+    left: 16,
+    right: 16,
     height: 2,
     borderRadius: 1,
     backgroundColor: '#FFD54F',
@@ -688,7 +737,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   emptyPosesText: {
-    color: 'rgba(255,255,255,0.25)',
+    color: 'rgba(255,255,255,0.2)',
     fontFamily: TYPOGRAPHY.weights.regular,
     fontSize: TYPOGRAPHY.sizes.sm,
   },

@@ -145,7 +145,7 @@ export const PoseOverlayLayer: React.FC<PoseOverlayLayerProps> = ({ poseOutlineK
             <OutlineComponent
               width={outlineSize}
               height={outlineSize * 1.6}
-              color={locked ? 'rgba(76, 175, 80, 0.85)' : 'rgba(255, 213, 79, 0.9)'}
+              color={locked ? 'rgba(76, 175, 80, 0.6)' : 'rgba(255, 213, 79, 0.5)'}
             />
           </View>
         </Animated.View>

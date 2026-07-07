@@ -14,12 +14,13 @@ import { useFavoritesStore } from '../../store/useFavoritesStore';
 import { PoseLibraryService } from '../../services/PoseLibraryService';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
+import { getSvgOutline } from '../../features/overlay/svgOutlines';
 
 export default function HomeScreen() {
   const colors = useColors();
   const [searchQuery, setSearchQuery] = useState('');
   const { user } = useAuthStore();
-  const { recentCategories, continueLastPoseId } = useRecentStore();
+  const { recentCategories, recentTemplates, continueLastPoseId } = useRecentStore();
   const { favoritePoseIds, toggleFavoritePose } = useFavoritesStore();
 
   const handleCategoryPress = (categoryId: string) => {
@@ -28,6 +29,10 @@ export default function HomeScreen() {
 
   const handlePosePress = (poseId: string) => {
     router.push(`/pose/${poseId}`);
+  };
+
+  const handleContinuePress = (poseId: string) => {
+    router.push(`/camera/${poseId}`);
   };
 
   const handleSubscribe = () => {
@@ -40,14 +45,29 @@ export default function HomeScreen() {
   const allCategories = useMemo(() => PoseLibraryService.getAllCategories(), []);
   const quickCategories = useMemo(() => allCategories.slice(0, 8), [allCategories]);
 
-  // Search results logic
   const searchResults = useMemo(() => {
     if (searchQuery.trim() === '') return null;
     return PoseLibraryService.searchPoses(searchQuery);
   }, [searchQuery]);
 
+  // Favorite poses list (resolved from IDs)
+  const favoritePoses = useMemo(() => {
+    return favoritePoseIds
+      .map(id => PoseLibraryService.getPoseById(id))
+      .filter(Boolean) as ReturnType<typeof PoseLibraryService.getPoseById>[];
+  }, [favoritePoseIds]);
+
+  // Recent poses (last 5, excluding continueLastPoseId to avoid duplicate)
+  const recentPoses = useMemo(() => {
+    return recentTemplates
+      .filter(id => id !== continueLastPoseId)
+      .slice(0, 5)
+      .map(id => PoseLibraryService.getPoseById(id))
+      .filter(Boolean) as ReturnType<typeof PoseLibraryService.getPoseById>[];
+  }, [recentTemplates, continueLastPoseId]);
+
   const renderPoseItem = ({ item }: { item: any }) => (
-    <PoseCard 
+    <PoseCard
       pose={item}
       onPress={() => handlePosePress(item.id)}
       isFavorite={favoritePoseIds.includes(item.id)}
@@ -55,8 +75,12 @@ export default function HomeScreen() {
     />
   );
 
+  const continueLastPose = continueLastPoseId
+    ? PoseLibraryService.getPoseById(continueLastPoseId)
+    : null;
+
   return (
-    <ScrollView 
+    <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.contentContainer}
       contentInsetAdjustmentBehavior="automatic"
@@ -67,7 +91,7 @@ export default function HomeScreen() {
           <Text style={[styles.greeting, { color: colors.mutedForeground }]}>Hello, {user?.name || 'Guest'}</Text>
           <Text style={[styles.title, { color: colors.foreground }]}>Ready to shoot?</Text>
         </View>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.proBadge, { backgroundColor: user?.isPremium ? colors.primary : colors.secondary, borderRadius: 20 }]}
           onPress={user?.isPremium ? undefined : handleSubscribe}
         >
@@ -78,7 +102,7 @@ export default function HomeScreen() {
       </Animated.View>
 
       <View style={[styles.searchWrapper, { backgroundColor: colors.background }]}>
-        <SearchBar 
+        <SearchBar
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholder="Search poses, tags, categories..."
@@ -106,7 +130,7 @@ export default function HomeScreen() {
 
       {!searchResults && (
         <>
-          <AnimatedBanner 
+          <AnimatedBanner
             title="Pose Master Pro"
             subtitle="Unlock all professional templates"
             onPress={handleSubscribe}
@@ -114,8 +138,8 @@ export default function HomeScreen() {
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickCatsRow}>
             {quickCategories.map(cat => (
-              <TouchableOpacity 
-                key={cat.id} 
+              <TouchableOpacity
+                key={cat.id}
                 style={[styles.quickCatChip, { backgroundColor: colors.secondary, borderRadius: colors.radius }]}
                 onPress={() => handleCategoryPress(cat.id)}
               >
@@ -125,23 +149,65 @@ export default function HomeScreen() {
             ))}
           </ScrollView>
 
-          {continueLastPoseId && PoseLibraryService.getPoseById(continueLastPoseId) && (
+          {/* ── Continue Last Pose ─────────────────────────────── */}
+          {continueLastPose && (
             <View style={styles.continueSection}>
               <SectionHeader title="Continue Last Pose" />
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.continueCard, { backgroundColor: colors.card, borderRadius: colors.radius }]}
-                onPress={() => handlePosePress(continueLastPoseId)}
+                onPress={() => handleContinuePress(continueLastPose.id)}
+                activeOpacity={0.85}
               >
-                <View style={[styles.continueImg, { backgroundColor: PoseLibraryService.getPoseById(continueLastPoseId)?.previewImage || colors.secondary, borderRadius: colors.radius }]} />
+                <ContinuePreview pose={continueLastPose} />
                 <View style={styles.continueInfo}>
                   <Text style={[styles.continueTitle, { color: colors.foreground }]} numberOfLines={1}>
-                    {PoseLibraryService.getPoseById(continueLastPoseId)?.title}
+                    {continueLastPose.title}
                   </Text>
-                  <Text style={[styles.continueSub, { color: colors.mutedForeground }]}>Tap to resume</Text>
+                  <Text style={[styles.continueSub, { color: colors.mutedForeground }]}>
+                    {PoseLibraryService.getCategoryById(continueLastPose.categoryId)?.name ?? ''} · {continueLastPose.difficulty}
+                  </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={24} color={colors.mutedForeground} />
+                <View style={[styles.continueBtn, { backgroundColor: colors.primary }]}>
+                  <Ionicons name="camera" size={16} color="#000" />
+                  <Text style={styles.continueBtnText}>Open</Text>
+                </View>
               </TouchableOpacity>
             </View>
+          )}
+
+          {/* ── My Favourites ──────────────────────────────────── */}
+          {favoritePoses.length > 0 && (
+            <>
+              <SectionHeader
+                title="My Favourites"
+                actionTitle="See All"
+                onActionPress={() => router.navigate('/(tabs)/favorites')}
+                style={{ marginTop: SPACING.xl }}
+              />
+              <FlatList
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.listContainer}
+                data={favoritePoses as any[]}
+                keyExtractor={item => item.id}
+                renderItem={renderPoseItem}
+              />
+            </>
+          )}
+
+          {/* ── Recently Used Poses ────────────────────────────── */}
+          {recentPoses.length > 0 && (
+            <>
+              <SectionHeader title="Recently Used" style={{ marginTop: SPACING.xl }} />
+              <FlatList
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.listContainer}
+                data={recentPoses as any[]}
+                keyExtractor={item => item.id}
+                renderItem={renderPoseItem}
+              />
+            </>
           )}
 
           <SectionHeader title="Trending Today" style={{ marginTop: SPACING.xl }} />
@@ -154,11 +220,11 @@ export default function HomeScreen() {
             renderItem={renderPoseItem}
           />
 
-          <SectionHeader 
-            title="Popular Categories" 
-            actionTitle="See All" 
-            onActionPress={() => router.navigate('/(tabs)/categories')} 
-            style={{ marginTop: SPACING.xl }} 
+          <SectionHeader
+            title="Popular Categories"
+            actionTitle="See All"
+            onActionPress={() => router.navigate('/(tabs)/categories')}
+            style={{ marginTop: SPACING.xl }}
           />
           <FlatList
             horizontal
@@ -167,7 +233,7 @@ export default function HomeScreen() {
             data={allCategories.slice(0, 6)}
             keyExtractor={item => item.id}
             renderItem={({ item }) => (
-              <CategoryCard 
+              <CategoryCard
                 name={item.name}
                 icon={item.icon}
                 count={item.poseCount}
@@ -178,7 +244,7 @@ export default function HomeScreen() {
 
           {recentCategories.length > 0 && (
             <>
-              <SectionHeader title="Recently Viewed" style={{ marginTop: SPACING.xl }} />
+              <SectionHeader title="Recently Viewed Categories" style={{ marginTop: SPACING.xl }} />
               <FlatList
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -186,7 +252,7 @@ export default function HomeScreen() {
                 data={recentCategories.map(id => PoseLibraryService.getCategoryById(id)).filter(Boolean) as any}
                 keyExtractor={item => item.id}
                 renderItem={({ item }) => (
-                  <CategoryCard 
+                  <CategoryCard
                     name={item.name}
                     icon={item.icon}
                     count={item.poseCount}
@@ -223,6 +289,17 @@ export default function HomeScreen() {
     </ScrollView>
   );
 }
+
+/** Small SVG preview thumbnail shown in the "Continue Last Pose" card */
+const ContinuePreview: React.FC<{ pose: ReturnType<typeof PoseLibraryService.getPoseById> }> = ({ pose }) => {
+  if (!pose) return null;
+  const OutlineSvg = getSvgOutline(pose.svgOutline);
+  return (
+    <View style={[styles.continuePreviewBox, { backgroundColor: pose.previewImage + '30' }]}>
+      <OutlineSvg width={44} height={56} color={pose.previewImage} />
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -303,11 +380,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginHorizontal: SPACING.lg,
     padding: SPACING.sm,
+    gap: SPACING.md,
   },
-  continueImg: {
+  continuePreviewBox: {
     width: 60,
-    height: 60,
-    marginRight: SPACING.md,
+    height: 70,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
   },
   continueInfo: {
     flex: 1,
@@ -320,6 +401,20 @@ const styles = StyleSheet.create({
   continueSub: {
     fontFamily: TYPOGRAPHY.weights.regular,
     fontSize: TYPOGRAPHY.sizes.sm,
+    textTransform: 'capitalize',
+  },
+  continueBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 8,
+    borderRadius: 12,
+  },
+  continueBtnText: {
+    color: '#000',
+    fontFamily: TYPOGRAPHY.weights.semiBold,
+    fontSize: TYPOGRAPHY.sizes.sm,
   },
   listContainer: {
     paddingHorizontal: SPACING.lg,
@@ -327,5 +422,5 @@ const styles = StyleSheet.create({
   },
   bottomPadding: {
     height: 40,
-  }
+  },
 });

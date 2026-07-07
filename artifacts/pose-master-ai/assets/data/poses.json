@@ -12,8 +12,17 @@
     "recommendedHeight": "Eye Level",
     "orientation": "portrait",
     "premium": false,
-    "description": "A classic elegant pose looking back over the shoulder.",
+    "description": "A classic elegant pose looking back over the shoulder. Great for outdoor and street photography.",
     "tips": ["Keep your back straight", "Look slightly down"],
+    "instructions": [
+      "Stand straight with feet shoulder-width apart",
+      "Shift your weight to one leg slightly",
+      "Slowly turn your upper body about 45 degrees away from camera",
+      "Look back over your shoulder toward the camera",
+      "Keep your chin slightly down for a flattering angle",
+      "Relax your shoulders and breathe naturally",
+      "Hold the pose and smile softly"
+    ],
     "svgOutline": "standing",
     "previewImage": "#FFD54F",
     "tags": ["elegant", "classic", "standing"]
@@ -31,8 +40,17 @@
     "recommendedHeight": "Waist Level",
     "orientation": "portrait",
     "premium": false,
-    "description": "Walking casually towards the camera.",
+    "description": "Walking casually towards the camera with confidence. Perfect for street and lifestyle shots.",
     "tips": ["Walk slowly", "Keep hands in pockets"],
+    "instructions": [
+      "Start about 5 meters from the camera",
+      "Begin walking toward the camera at a slow, relaxed pace",
+      "Keep your hands in your pockets or swing them naturally",
+      "Look straight at the camera or slightly past it",
+      "Keep your chin level and shoulders relaxed",
+      "Let your stride be natural — not too big, not too small",
+      "Stop when you reach the gold outline position"
+    ],
     "svgOutline": "walking",
     "previewImage": "#4FC3F7",
     "tags": ["casual", "street", "walking"]
@@ -50,8 +68,17 @@
     "recommendedHeight": "Eye Level",
     "orientation": "portrait",
     "premium": true,
-    "description": "A close romantic hug from the front.",
+    "description": "A close romantic hug from the front. Perfect for couples and anniversary shoots.",
     "tips": ["Close your eyes", "Smile naturally"],
+    "instructions": [
+      "Stand facing each other, very close together",
+      "The taller person wraps both arms around the other",
+      "The shorter person places hands on the other's chest or sides",
+      "Both lean in slightly, foreheads almost touching",
+      "Close your eyes or look at each other naturally",
+      "Smile gently — be in the moment",
+      "Hold the pose until the shutter fires"
+    ],
     "svgOutline": "hug",
     "previewImage": "#E57373",
     "tags": ["romantic", "couple", "hug"]
@@ -69,10 +96,47 @@
     "recommendedHeight": "Low Angle",
     "orientation": "landscape",
     "premium": false,
-    "description": "Friends jumping together in the air.",
+    "description": "Friends jumping together in the air for an energetic, fun group photo.",
     "tips": ["Coordinate the jump", "Use burst mode"],
+    "instructions": [
+      "All friends stand shoulder-to-shoulder in a line",
+      "Set a countdown — 3, 2, 1, jump!",
+      "Everyone jumps at the same time as high as possible",
+      "Raise arms or spread them out for more energy",
+      "Smile and laugh — the joy shows in the photo",
+      "The photographer uses burst mode to catch the peak jump",
+      "Retry 2-3 times until the timing is perfect"
+    ],
     "svgOutline": "jump",
     "previewImage": "#81C784",
     "tags": ["fun", "friends", "jump"]
+  },
+  {
+    "id": "p5",
+    "title": "Golden Hour Wanderer",
+    "categoryId": "c7",
+    "subcategory": "Outdoor",
+    "gender": "girl",
+    "ageGroup": "adult",
+    "difficulty": "easy",
+    "cameraType": "rear",
+    "recommendedDistance": "3 Meter",
+    "recommendedHeight": "Eye Level",
+    "orientation": "portrait",
+    "premium": false,
+    "description": "A dreamy solo travel pose for outdoor golden hour photography.",
+    "tips": ["Shoot during golden hour", "Use natural background"],
+    "instructions": [
+      "Find a scenic outdoor spot with open space behind you",
+      "Stand with one foot slightly in front of the other",
+      "Place one hand near your face, touching your hair lightly",
+      "Let the other arm hang naturally at your side",
+      "Tilt your head slightly toward the raised hand",
+      "Look into the distance or gently toward the camera",
+      "Breathe out slowly for a natural, relaxed expression"
+    ],
+    "svgOutline": "standing",
+    "previewImage": "#FFAB40",
+    "tags": ["travel", "outdoor", "golden hour", "dreamy"]
   }
 ]

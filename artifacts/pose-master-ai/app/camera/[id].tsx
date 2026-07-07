@@ -1,12 +1,12 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Platform, FlatList, Image } from 'react-native';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Platform, Image } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useColors } from '../../hooks/useColors';
 import { SPACING, TYPOGRAPHY } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useRecentStore } from '../../store/useRecentStore';
 import * as Haptics from 'expo-haptics';
-import { CameraView, useCameraPermissions, Camera } from 'expo-camera';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import { BlurView } from 'expo-blur';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, runOnJS, withSequence, withTiming } from 'react-native-reanimated';
@@ -16,62 +16,83 @@ import { OverlayControls } from '../../features/camera/OverlayControls';
 import { CameraSettingsSheet } from '../../features/camera/CameraSettingsSheet';
 import { PhotoReviewModal } from '../../features/camera/PhotoReviewModal';
 import { CameraGrid } from '../../features/camera/CameraGrid';
+import { CameraPoseBottomSheet } from '../../features/camera/CameraPoseBottomSheet';
+import { PoseInfoSheet } from '../../features/camera/PoseInfoSheet';
+import { FloatingGuidePanel } from '../../features/camera/FloatingGuidePanel';
 import { useCameraSettingsStore } from '../../store/useCameraSettingsStore';
 import { useCapturedPhotosStore } from '../../store/useCapturedPhotosStore';
 import { useOverlayStore } from '../../store/useOverlayStore';
+import { useGuideStore } from '../../store/useGuideStore';
 import { PoseLibraryService } from '../../services/PoseLibraryService';
 import { PrimaryButton } from '../../components/PrimaryButton';
+import { PoseTemplate } from '../../types';
+
+// Estimated height of capture controls row (modesRow + bottomControls)
+// Accounts for ~145px fixed height; safe area insets are added at render time
+const CAPTURE_CONTROLS_FIXED_H = 145;
 
 export default function CameraScreen() {
   const { id } = useLocalSearchParams();
   const colors = useColors();
   const { addRecentTemplate } = useRecentStore();
   const insets = useSafeAreaInsets();
-  
+
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
   const settings = useCameraSettingsStore();
   const { photos, loadPhotos } = useCapturedPhotosStore();
-  const { loadState: loadOverlayState, setLastPoseId } = useOverlayStore();
+  const { loadState: loadOverlayState, setLastPoseId, resetPosition, setScale, setRotation } = useOverlayStore();
+  const { activateGuide } = useGuideStore();
 
-  const pose = typeof id === 'string' ? PoseLibraryService.getPoseById(id) : undefined;
-  const outlineKey = pose?.svgOutline ?? 'placeholder';
+  // Active pose — can be changed from the bottom sheet without navigating away
+  const [activePoseId, setActivePoseId] = useState<string | undefined>(
+    typeof id === 'string' ? id : undefined
+  );
+
+  // Pose info modal
+  const [poseForInfo, setPoseForInfo] = useState<PoseTemplate | null>(null);
+  const [showPoseInfo, setShowPoseInfo] = useState(false);
 
   const [facing, setFacing] = useState<'front' | 'back'>('back');
   const [flash, setFlash] = useState<'off' | 'on' | 'auto'>('off');
   const [zoom, setZoom] = useState(0);
   const [isReady, setIsReady] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  
   const [reviewPhoto, setReviewPhoto] = useState<string | null>(null);
-  
-  // Animation values
+
   const captureScale = useSharedValue(1);
   const focusX = useSharedValue(0);
   const focusY = useSharedValue(0);
   const focusOpacity = useSharedValue(0);
 
   const captureAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: captureScale.value }]
+    transform: [{ scale: captureScale.value }],
   }));
 
   const focusAnimatedStyle = useAnimatedStyle(() => ({
     opacity: focusOpacity.value,
     transform: [
       { translateX: focusX.value - 25 },
-      { translateY: focusY.value - 25 }
-    ]
+      { translateY: focusY.value - 25 },
+    ],
   }));
 
+  const activePose = activePoseId ? PoseLibraryService.getPoseById(activePoseId) : undefined;
+  const outlineKey = activePose?.svgOutline ?? 'placeholder';
+
+  // Height above which the bottom sheet anchors
+  const captureControlsHeight = CAPTURE_CONTROLS_FIXED_H + insets.bottom;
+
   useEffect(() => {
-    if (id && typeof id === 'string') {
-      addRecentTemplate(id);
-      setLastPoseId(id);
+    if (activePoseId) {
+      addRecentTemplate(activePoseId);
+      setLastPoseId(activePoseId);
     }
     loadPhotos();
     loadOverlayState();
-  }, [id]);
+  }, [activePoseId]);
 
+  // ── Permission screens ──────────────────────────────────────────────────────
   if (!permission) {
     return <View style={[styles.container, { backgroundColor: '#000' }]} />;
   }
@@ -92,6 +113,7 @@ export default function CameraScreen() {
     );
   }
 
+  // ── Handlers ────────────────────────────────────────────────────────────────
   const toggleCameraFacing = () => {
     setFacing(current => (current === 'back' ? 'front' : 'back'));
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -108,61 +130,82 @@ export default function CameraScreen() {
 
   const handleCapture = async () => {
     if (!cameraRef.current) return;
-    
-    // UI Feedback
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     captureScale.value = withSequence(
       withTiming(0.8, { duration: 100 }),
       withSpring(1)
     );
-
     try {
       const photo = await cameraRef.current.takePictureAsync({
         quality: settings.quality === 'High' ? 1 : settings.quality === 'Medium' ? 0.7 : 0.4,
       });
-      if (photo) {
-        setReviewPhoto(photo.uri);
-      }
-    } catch (e) {
-      console.error("Capture error:", e);
-      // In web preview without real camera
-      if (Platform.OS === 'web') {
-        alert("Camera capture not supported in web preview");
-      }
+      if (photo) setReviewPhoto(photo.uri);
+    } catch {
+      if (Platform.OS === 'web') alert('Camera capture not supported in web preview');
     }
   };
 
   const getFlashIcon = () => {
     if (flash === 'on') return 'flash';
-    if (flash === 'auto') return 'flash-outline'; // In a real app we'd overlay an 'A'
+    if (flash === 'auto') return 'flash-outline';
     return 'flash-off-outline';
   };
 
-  const pinchGesture = Gesture.Pinch()
-    .onUpdate((e) => {
-      // Very basic zoom mapping
-      const newZoom = Math.max(0, Math.min(1, zoom + (e.velocity / 1000)));
-      runOnJS(setZoom)(newZoom);
-    });
+  // Opens the pose info sheet from the bottom sheet carousel
+  const handlePoseInfoRequest = (pose: PoseTemplate) => {
+    setPoseForInfo(pose);
+    setShowPoseInfo(true);
+  };
 
-  const tapGesture = Gesture.Tap()
-    .onEnd((e) => {
-      focusX.value = e.x;
-      focusY.value = e.y;
-      focusOpacity.value = withSequence(
-        withTiming(1, { duration: 200 }),
-        withTiming(1, { duration: 800 }),
-        withTiming(0, { duration: 300 })
-      );
-      // expo-camera tap to focus is handled internally or via coordinate APIs depending on version
-      // We show UI feedback here
-      runOnJS(Haptics.impactAsync)(Haptics.ImpactFeedbackStyle.Light);
-    });
+  // Called from bottom sheet "Start Guide" button (for current active pose)
+  const handleStartGuideCurrentPose = () => {
+    if (!activePose) return;
+    startGuideForPose(activePose);
+  };
+
+  // Called from PoseInfoSheet "Start Pose Guide" button
+  const handleStartGuideFromInfo = (pose: PoseTemplate) => {
+    setShowPoseInfo(false);
+    setPoseForInfo(null);
+    // Switch active pose to the selected one
+    setActivePoseId(pose.id);
+    addRecentTemplate(pose.id);
+    setLastPoseId(pose.id);
+    // Center the overlay for the new pose
+    resetPosition();
+    setScale(1);
+    setRotation(0);
+    // Start the step guide
+    startGuideForPose(pose);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  };
+
+  const startGuideForPose = (pose: PoseTemplate) => {
+    activateGuide(pose.instructions, pose.title);
+  };
+
+  // ── Gestures ─────────────────────────────────────────────────────────────────
+  const pinchGesture = Gesture.Pinch().onUpdate((e) => {
+    const newZoom = Math.max(0, Math.min(1, zoom + e.velocity / 1000));
+    runOnJS(setZoom)(newZoom);
+  });
+
+  const tapGesture = Gesture.Tap().onEnd((e) => {
+    focusX.value = e.x;
+    focusY.value = e.y;
+    focusOpacity.value = withSequence(
+      withTiming(1, { duration: 200 }),
+      withTiming(1, { duration: 800 }),
+      withTiming(0, { duration: 300 })
+    );
+    runOnJS(Haptics.impactAsync)(Haptics.ImpactFeedbackStyle.Light);
+  });
 
   const composed = Gesture.Simultaneous(pinchGesture, tapGesture);
 
   const lastPhoto = photos.length > 0 ? photos[0] : null;
 
+  // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <GestureHandlerRootView style={styles.container}>
       {Platform.OS === 'web' ? (
@@ -178,49 +221,46 @@ export default function CameraScreen() {
         </View>
       ) : (
         <GestureDetector gesture={composed}>
-          <CameraView 
+          <CameraView
             ref={cameraRef}
             style={StyleSheet.absoluteFill}
             facing={facing}
             flash={flash}
             zoom={zoom}
-            animateShutter={false} // Custom animation
+            animateShutter={false}
             mirror={settings.mirrorSelfie && facing === 'front'}
             onCameraReady={() => setIsReady(true)}
           >
-            {/* Grid */}
             <CameraGrid visible={settings.grid} />
-            
-            {/* Pose Overlay Architecture */}
             <PoseOverlayLayer poseOutlineKey={outlineKey} />
 
-            {/* Tap to focus ring */}
+            {/* Tap-to-focus ring */}
             <Animated.View style={[styles.focusRing, focusAnimatedStyle]} />
-            
-            {/* Instruction Badge */}
-            <View style={[styles.instructionBadge, { top: Math.max(insets.top + 80, 100) }]}>
-              <Text style={styles.instructionText}>Fit body inside the gold outline</Text>
-            </View>
 
-            {/* Overlay Controls FAB / Panel */}
+            {/* Overlay Controls FAB */}
             <OverlayControls />
 
+            {/* Floating Guide Panel */}
+            <FloatingGuidePanel />
+
             {/* Top Chrome */}
-            <BlurView intensity={30} tint="dark" style={[styles.topControls, { paddingTop: Math.max(insets.top, 20) }]}>
+            <BlurView
+              intensity={30}
+              tint="dark"
+              style={[styles.topControls, { paddingTop: Math.max(insets.top, 20) }]}
+            >
               <TouchableOpacity style={styles.iconButton} onPress={() => router.back()}>
                 <Ionicons name="close" size={28} color="#ffffff" />
               </TouchableOpacity>
-              
+
               <View style={styles.centerTopControls}>
                 <TouchableOpacity style={styles.iconButton} onPress={cycleFlash}>
                   <Ionicons name={getFlashIcon()} size={24} color="#ffffff" />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.iconButton}>
-                  {/* HDR Placeholder */}
                   <Text style={styles.hdrText}>HDR</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.iconButton}>
-                  {/* Battery friendly placeholder */}
                   <Ionicons name="leaf-outline" size={20} color="#4CAF50" />
                 </TouchableOpacity>
               </View>
@@ -230,52 +270,69 @@ export default function CameraScreen() {
               </TouchableOpacity>
             </BlurView>
 
-            {/* Bottom Chrome */}
+            {/* Bottom Controls */}
             <View style={[styles.bottomContainer, { paddingBottom: Math.max(insets.bottom, 20) }]}>
               <View style={styles.modesRow}>
                 <Text style={[styles.modeText, styles.modeTextActive]}>PHOTO</Text>
                 <Text style={styles.modeText}>VIDEO</Text>
                 <Text style={styles.modeText}>PORTRAIT</Text>
               </View>
-              
+
               <BlurView intensity={30} tint="dark" style={styles.bottomControls}>
-                {/* Gallery Preview */}
-                <TouchableOpacity style={styles.galleryButton} onPress={() => router.push('/(tabs)/gallery')}>
+                <TouchableOpacity
+                  style={styles.galleryButton}
+                  onPress={() => router.push('/(tabs)/gallery')}
+                >
                   {lastPhoto ? (
                     <Image source={{ uri: lastPhoto.uri }} style={styles.galleryImage} />
                   ) : (
                     <Ionicons name="images" size={24} color="#ffffff" />
                   )}
                 </TouchableOpacity>
-                
-                {/* Capture Button */}
+
                 <Animated.View style={[styles.captureButtonContainer, captureAnimatedStyle]}>
-                  <TouchableOpacity style={styles.captureButton} onPress={handleCapture} activeOpacity={1}>
+                  <TouchableOpacity
+                    style={styles.captureButton}
+                    onPress={handleCapture}
+                    activeOpacity={1}
+                  >
                     <View style={styles.captureInner} />
                   </TouchableOpacity>
                 </Animated.View>
 
-                {/* Flip Camera */}
                 <TouchableOpacity style={styles.flipButton} onPress={toggleCameraFacing}>
                   <Ionicons name="camera-reverse" size={28} color="#ffffff" />
                 </TouchableOpacity>
               </BlurView>
             </View>
+
+            {/* Draggable Pose Bottom Sheet — sits above capture controls */}
+            <CameraPoseBottomSheet
+              currentPoseId={activePoseId}
+              captureControlsHeight={captureControlsHeight}
+              onPoseInfoRequest={handlePoseInfoRequest}
+              onStartGuide={handleStartGuideCurrentPose}
+            />
           </CameraView>
         </GestureDetector>
       )}
 
       <CameraSettingsSheet visible={showSettings} onClose={() => setShowSettings(false)} />
-      
-      <PhotoReviewModal 
+
+      <PhotoReviewModal
         photoUri={reviewPhoto}
         visible={!!reviewPhoto}
         onRetake={() => setReviewPhoto(null)}
-        onSave={() => {
-          setReviewPhoto(null);
-          // Store will update automatically, just close modal
-        }}
+        onSave={() => setReviewPhoto(null)}
         onClose={() => setReviewPhoto(null)}
+      />
+
+      {/* Pose Info Sheet — rendered outside CameraView so it covers fully */}
+      <PoseInfoSheet
+        pose={poseForInfo}
+        visible={showPoseInfo}
+        onClose={() => { setShowPoseInfo(false); setPoseForInfo(null); }}
+        onStartGuide={handleStartGuideFromInfo}
       />
     </GestureHandlerRootView>
   );
@@ -348,24 +405,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     opacity: 0.7,
   },
-  instructionBadge: {
-    position: 'absolute',
-    alignSelf: 'center',
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.sm,
-    borderRadius: 20,
-  },
-  instructionText: {
-    color: '#FFD54F',
-    fontFamily: TYPOGRAPHY.weights.medium,
-    fontSize: TYPOGRAPHY.sizes.sm,
-  },
   bottomContainer: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
+    zIndex: 20,
   },
   modesRow: {
     flexDirection: 'row',
@@ -442,5 +487,5 @@ const styles = StyleSheet.create({
     borderColor: '#FFD54F',
     left: 0,
     top: 0,
-  }
+  },
 });

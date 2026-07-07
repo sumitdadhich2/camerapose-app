@@ -24,6 +24,8 @@ export type PoseTemplate = {
   premium: boolean;
   description: string;
   tips: string[];
+  /** Ordered step-by-step instructions shown in the guide panel and pose info sheet. */
+  instructions: string[];
   /** Key into the local SVG outline registry (see features/overlay/svgOutlines.tsx). */
   svgOutline: string;
   previewImage: string;

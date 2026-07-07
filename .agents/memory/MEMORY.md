@@ -1,1 +1,2 @@
 - [Pose Master AI overlay engine](pose-master-ai-overlay-engine.md) — SVG outline registry, overlay gesture/store architecture, and camera-permission-blocks-web-preview gotcha.
+- [Camera flow architecture](camera-flow-arch.md) — active pose is local state (not route param only), bottom sheet uses translateY snap approach, PoseInfoSheet is Modal, guide is separate zustand store.

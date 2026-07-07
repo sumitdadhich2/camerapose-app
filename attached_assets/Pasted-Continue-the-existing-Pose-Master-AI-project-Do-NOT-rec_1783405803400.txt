@@ -1,0 +1,259 @@
+Continue the existing Pose Master AI project.
+
+Do NOT recreate the project.
+
+Do NOT remove any existing feature.
+
+Only improve the current camera experience and user flow.
+
+==================================================
+
+MAIN GOAL
+
+The user should NEVER need to go back to Home to select another pose.
+
+Everything should be accessible directly from the Camera screen.
+
+==================================================
+
+CAMERA SCREEN LAYOUT
+
+The camera preview should remain full screen.
+
+At the bottom, above the capture controls, add a draggable bottom sheet.
+
+The bottom sheet should have two states:
+
+Collapsed
+
+Expanded
+
+==================================================
+
+COLLAPSED MODE
+
+Show:
+
+Current Pose Name
+
+Change Pose Button
+
+Current Category
+
+Recommended Distance
+
+Start Guide Button
+
+==================================================
+
+EXPANDED MODE
+
+Show horizontal category tabs.
+
+Example
+
+Girls
+
+Boys
+
+Couple
+
+Friends
+
+Family
+
+Kids
+
+Travel
+
+Temple
+
+Car
+
+Bike
+
+Fashion
+
+Wedding
+
+Nature
+
+More...
+
+When user taps a category,
+
+display all poses inside that category in a beautiful horizontal carousel.
+
+Each pose card should contain:
+
+Preview Placeholder
+
+Pose Name
+
+Difficulty
+
+Premium Badge
+
+==================================================
+
+POSE SELECTION
+
+When user taps any pose
+
+DO NOT open another screen.
+
+Instead,
+
+show a modern bottom sheet.
+
+==================================================
+
+POSE INFORMATION SHEET
+
+Display:
+
+Large Preview Placeholder
+
+Pose Name
+
+Category
+
+Difficulty
+
+Recommended Camera Distance
+
+Recommended Camera Height
+
+Short Description
+
+Step-by-step Instructions
+
+Example
+
+Stand straight
+
+Raise your right hand
+
+Keep left hand near waist
+
+Turn face slightly right
+
+Relax shoulders
+
+Smile naturally
+
+Look toward camera
+
+Every instruction should have a check icon.
+
+At the bottom
+
+Large Button
+
+"Start Pose Guide"
+
+==================================================
+
+WHEN USER PRESSES
+
+START POSE GUIDE
+
+Close bottom sheet.
+
+Load selected overlay.
+
+Center overlay automatically.
+
+Prepare future AI placeholders.
+
+Show a small floating instruction card.
+
+Example
+
+Current Pose
+
+Traditional Standing
+
+Next Step
+
+Raise Right Hand
+
+This card will later be updated by AI.
+
+==================================================
+
+FLOATING GUIDE PANEL
+
+Small glass panel.
+
+Shows:
+
+Current Step
+
+Progress
+
+Example
+
+Step 2 / 7
+
+Raise Right Hand
+
+Perfect
+
+==================================================
+
+HOME PAGE IMPROVEMENT
+
+On Home screen,
+
+show recently used pose.
+
+Continue Pose button.
+
+Favorite Pose section.
+
+==================================================
+
+PLACEHOLDER CONTENT
+
+Use 5 demo pose templates.
+
+Use simple SVG placeholders.
+
+Use dummy instructions.
+
+Later the developer will replace them with real templates and instructions.
+
+Structure everything so replacing data requires only editing JSON files.
+
+==================================================
+
+IMPORTANT
+
+Do NOT hardcode pose data.
+
+All pose data must come from local JSON.
+
+Future updates should only require adding JSON and SVG files.
+
+==================================================
+
+UI
+
+Premium
+
+Smooth
+
+Glassmorphism
+
+Rounded
+
+Modern
+
+Black + Gold Theme
+
+No lag.
+
+==================================================
+
+The app must compile successfully inside Expo Preview with no errors.

@@ -13,7 +13,7 @@ A mobile smart-camera-assistant app that helps users take professional photos by
 
 ## Stack
 
-- pnpm workspaces, Node.js 24, TypeScript 5.9
+- pnpm workspaces, Node.js 20, TypeScript 5.9
 - API: Express 5
 - DB: PostgreSQL + Drizzle ORM
 - Validation: Zod (`zod/v4`), `drizzle-zod`
@@ -34,12 +34,15 @@ Offline-first mobile app (Expo) with: onboarding, guest/Google login (login is a
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- **Offline-only**: Do not configure or require the Express API server, PostgreSQL, or DATABASE_URL. The app must work fully offline.
+- **Local data only**: All pose templates are stored locally in the app bundle. Photos are saved to the user's device only (expo-media-library).
+- **MMKV for persistence**: Use react-native-mmkv (not AsyncStorage) for settings and favorites. This requires a native/dev build, not Expo Go.
+- **Ignore the backend**: Do not wire up the api-server or db packages to the mobile app. Backend is out of scope.
 
 ## Gotchas
 
 - Workflow name for the Expo artifact is `artifacts/pose-master-ai: expo` (not the slug) — use `listWorkflows()` to confirm exact names before restarting.
-- Uses AsyncStorage (not react-native-mmkv) for local persistence — MMKV requires a native build and isn't Expo Go compatible.
+- User explicitly wants MMKV (react-native-mmkv) for settings/favorites — note this requires a native build (not Expo Go compatible; use a dev build or EAS build).
 
 ## Pointers
 

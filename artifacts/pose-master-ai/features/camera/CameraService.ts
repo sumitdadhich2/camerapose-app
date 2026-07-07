@@ -1,22 +1,28 @@
-// Placeholder for Camera SDK interactions and future ML models
+/**
+ * CameraService
+ * =============
+ * Low-level camera hardware operations only.
+ * No pose detection, no alignment scoring, no fake values.
+ *
+ * Pose detection is handled exclusively by PoseDetectionService.
+ */
 export const CameraService = {
+  /**
+   * Initialise camera hardware.
+   * Returns true when the camera is ready to capture.
+   */
   async initCamera(): Promise<boolean> {
-    console.log("Initializing camera hardware...");
+    // Placeholder — actual init handled by expo-camera's useCameraPermissions.
     return true;
   },
 
-  async capturePhoto(): Promise<string> {
-    console.log("Capturing photo...");
-    return "file://path/to/placeholder.jpg";
+  /**
+   * Capture a still photo from the active camera.
+   * Returns the local file URI of the captured image.
+   * Implemented in the camera screen via CameraView.takePictureAsync.
+   */
+  async capturePhoto(): Promise<string | null> {
+    // Placeholder — call CameraView.takePictureAsync directly in the UI layer.
+    return null;
   },
-
-  async runPoseDetection(frameData: any): Promise<any> {
-    // TODO: Wire up actual ML Kit or TensorFlow Lite pose detection
-    return { matchScore: 0.85, isAligned: true };
-  },
-
-  async calculateDistance(frameData: any): Promise<number> {
-    // TODO: Use depth data or pose size to calculate physical distance to subject
-    return 1.5; // meters
-  }
 };

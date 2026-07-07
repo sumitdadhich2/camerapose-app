@@ -18,7 +18,6 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PoseOverlayLayer } from '../../features/camera/PoseOverlayLayer';
-import { FloatingGuidePanel } from '../../features/camera/FloatingGuidePanel';
 import { CameraSettingsSheet } from '../../features/camera/CameraSettingsSheet';
 import { PhotoReviewModal } from '../../features/camera/PhotoReviewModal';
 import { CameraGrid } from '../../features/camera/CameraGrid';
@@ -26,39 +25,10 @@ import { PoseInfoSheet } from '../../features/camera/PoseInfoSheet';
 import { useCameraSettingsStore } from '../../store/useCameraSettingsStore';
 import { useCapturedPhotosStore } from '../../store/useCapturedPhotosStore';
 import { useOverlayStore } from '../../store/useOverlayStore';
-import { useGuideStore } from '../../store/useGuideStore';
 import { PoseLibraryService } from '../../services/PoseLibraryService';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { PoseTemplate } from '../../types';
 import { getSvgOutline } from '../../features/overlay/svgOutlines';
-
-// ─── Simple guide instructions ──────────────────────────────────────────────
-
-/**
- * Build a short sequence of single-phrase direction chips for the guide mode.
- * These are intentionally simple — no meters, no percentages, no jargon.
- */
-function buildGuideSteps(pose: PoseTemplate): string[] {
-  const base: string[] = [
-    'Align yourself with the outline',
-    'Step back a little',
-    'Stand up straight',
-    'Face the camera',
-    'Relax your shoulders',
-    'Match the pose outline',
-    'Hold still',
-    'Perfect Pose ✓',
-  ];
-
-  // Prepend a distance hint based on the pose's recommended distance
-  const dist = pose.recommendedDistance?.toLowerCase() ?? '';
-  const distHint =
-    dist.includes('close') ? 'Come closer' :
-    dist.includes('far')   ? 'Move back a little' :
-    'Step back a little';
-
-  return [distHint, ...base.slice(1)];
-}
 
 // ─── Sub-component defined at module level to avoid hook-order issues ────────
 
@@ -171,8 +141,6 @@ export default function CameraScreen() {
     setScale,
     setRotation,
   } = useOverlayStore();
-  const { activateGuide, deactivateGuide } = useGuideStore();
-
   // Active pose
   const [activePoseId, setActivePoseId] = useState<string | undefined>(
     typeof id === 'string' ? id : undefined,
@@ -239,14 +207,6 @@ export default function CameraScreen() {
     loadOverlayState();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activePoseId]);
-
-  // Deactivate guide when leaving the screen
-  useEffect(() => {
-    return () => {
-      deactivateGuide();
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // ── Gestures ──────────────────────────────────────────────────────────────
   const pinchGesture = Gesture.Pinch().onUpdate((e) => {
@@ -330,6 +290,8 @@ export default function CameraScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
+  // Load a pose into the overlay — no fake guidance, no simulated instructions.
+  // Real pose guidance will be driven by PoseDetectionService once connected.
   const handleStartGuide = (pose: PoseTemplate) => {
     setShowPoseInfo(false);
     setPoseForInfo(null);
@@ -339,8 +301,6 @@ export default function CameraScreen() {
     resetPosition();
     setScale(1);
     setRotation(0);
-    // Start guide with simple one-phrase instructions
-    activateGuide(buildGuideSteps(pose), pose.title);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
@@ -391,9 +351,6 @@ export default function CameraScreen() {
           </View>
         </GestureDetector>
       )}
-
-      {/* ── Instruction chip (guide mode) ── */}
-      <FloatingGuidePanel />
 
       {/* ── Top Bar ── */}
       <BlurView

@@ -1,124 +1,52 @@
 /**
- * Smart Guide Framework — AI-Ready Interfaces
- * ============================================
- * All interfaces here are designed so that real AI implementations
- * (MediaPipe, ML Kit, TensorFlow Lite) can be plugged in later
- * without changing any UI code.
+ * AI Interfaces — ML-Ready Only
+ * ==============================
+ * This file previously mixed demo simulation types (GuideState, OverallStatus,
+ * DEMO_SCENES) with real ML integration interfaces. The demo types have been
+ * removed entirely.
  *
- * Currently, the demo implementations in `hooks/useGuideDemo.ts`
- * drive these values using cycling logic.
+ * The canonical pose detection interface now lives in:
+ *   services/PoseDetectionService.ts
+ *
+ * Types kept here are supplementary ML integration contracts that sit
+ * alongside PoseDetectionService without duplicating it.
  */
 
-// ─── Core guide state types ────────────────────────────────────────────────────
+// ─── Re-export the canonical types from PoseDetectionService ─────────────────
 
-/** Traffic-light style overall alignment feedback. */
-export type OverallStatus = 'waiting' | 'aligning' | 'almost' | 'perfect';
+export type {
+  PoseLandmark,
+  PoseDetectionFrame,
+  DetectionStatus,
+  PoseDetectionResult,
+  PoseDetector,
+} from '../../services/PoseDetectionService';
 
-/** Status of a single body part in the pose alignment check. */
-export type BodyPartStatus = 'waiting' | 'correct' | 'incorrect';
-
-/** Camera distance recommendation. */
-export type DistanceStatus = 'too-close' | 'perfect' | 'too-far';
-
-/** Per-body-part alignment breakdown. */
-export interface BodyAlignment {
-  head: BodyPartStatus;
-  leftHand: BodyPartStatus;
-  rightHand: BodyPartStatus;
-  body: BodyPartStatus;
-  leftLeg: BodyPartStatus;
-  rightLeg: BodyPartStatus;
-}
-
-/** Full guide state — produced by demo or future AI service. */
-export interface GuideState {
-  overallStatus: OverallStatus;
-  instruction: string;
-  currentStep: number;
-  totalSteps: number;
-  distanceStatus: DistanceStatus;
-  bodyAlignment: BodyAlignment;
-}
-
-// ─── Future AI service interfaces ─────────────────────────────────────────────
+// ─── Supplementary future-integration interfaces ──────────────────────────────
 
 /**
- * MediaPipe Pose Landmarker integration point.
- * Replace useGuideDemo with a concrete implementation here.
+ * MediaPipe Pose Landmarker task runner.
+ * Implement this to use the MediaPipe WASM or Android task library.
  */
 export interface MediaPipePoseDetector {
-  /** Call once at startup. */
-  initialize(modelPath?: string): Promise<void>;
-  /** Feed a camera frame; returns per-body-part alignment. */
-  detectPose(frame: unknown): Promise<BodyAlignment>;
-  /** Release GPU resources. */
-  dispose(): void;
+  /** Load and warm up the model. Call once at startup. */
+  initialize(modelAssetPath?: string): Promise<void>;
+  /**
+   * Run inference on a single video frame.
+   * Returns null if detection could not run (e.g. no GPU).
+   */
+  detectForVideo(videoFrame: unknown, timestampMs: number): Promise<import('../../services/PoseDetectionService').PoseDetectionFrame | null>;
+  /** Free GPU/WASM resources. */
+  close(): void;
 }
 
 /**
- * ML Kit Body Detection — presence + bounding box.
+ * Google ML Kit Pose Detection (Android / iOS).
+ * Uses the on-device Accurate/Fast model via @react-native-ml-kit/pose-detection.
  */
-export interface MLKitBodyDetector {
-  /** Returns true when a human body is visible in frame. */
-  isBodyVisible(frame: unknown): Promise<boolean>;
-  /** Estimate distance in metres. Range 0.5–4.0 m. */
-  estimateDistance(frame: unknown): Promise<number>;
-}
-
-/**
- * TensorFlow Lite custom model runner.
- * Use for on-device pose scoring, custom classifiers, etc.
- */
-export interface TensorFlowLiteModel {
-  loadModel(assetPath: string): Promise<void>;
-  run(input: Float32Array): Promise<Float32Array>;
-  dispose(): void;
-}
-
-/**
- * High-level pose alignment engine — combines MediaPipe + optional TFLite
- * to produce a rich GuideState update.
- */
-export interface PoseAlignmentEngine {
-  analyze(
-    frame: unknown,
-    targetPoseKey: string,
-  ): Promise<{ status: OverallStatus; body: BodyAlignment; confidence: number }>;
-}
-
-/** Estimates subject–camera distance and recommends action. */
-export interface DistanceEngine {
-  measure(frame: unknown): Promise<{ status: DistanceStatus; meters: number }>;
-}
-
-/**
- * Decides when conditions are stable enough to auto-capture.
- * Receives the current guide state and how long (ms) the user has
- * held a 'perfect' alignment.
- */
-export interface AutoCaptureEngine {
-  evaluate(guideState: GuideState, heldPerfectMs: number): boolean;
-}
-
-/**
- * Text-to-speech voice guidance.
- * Backed by Expo Speech or platform TTS in a real build.
- */
-export interface VoiceGuidanceEngine {
-  speak(text: string, language?: string): Promise<void>;
-  stop(): void;
-  isSupported(): boolean;
-}
-
-/** Skeleton keypoints for raw MediaPipe / ML Kit output. */
-export interface BodyKeypoint {
-  name: string;
-  x: number; // normalised 0–1
-  y: number; // normalised 0–1
-  confidence: number; // 0–1
-}
-
-export interface SkeletonFrame {
-  keypoints: BodyKeypoint[];
-  timestamp: number;
+export interface MLKitPoseDetector {
+  /** Process a camera frame URI or ImageProxy. */
+  processImage(imageUri: string): Promise<import('../../services/PoseDetectionService').PoseLandmark[]>;
+  /** Release native resources. */
+  close(): void;
 }

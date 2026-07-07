@@ -11,6 +11,26 @@ env = { "CI" = "true" }
 [workflows]
 runButton = "Project"
 
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "artifacts/pose-master-ai: expo"
+
+[[workflows.workflow]]
+name = "artifacts/pose-master-ai: expo"
+author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "PORT=20632 pnpm --filter @workspace/pose-master-ai run dev"
+
 [agent]
 stack = "PNPM_WORKSPACE"
 expertMode = true

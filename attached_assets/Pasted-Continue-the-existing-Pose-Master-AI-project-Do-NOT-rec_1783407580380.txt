@@ -1,0 +1,289 @@
+Continue the existing Pose Master AI project.
+
+Do NOT recreate the project.
+
+Do NOT break existing functionality.
+
+Only extend the current application.
+
+====================================================
+
+MAIN GOAL
+
+Build a Smart Live Pose Guide Framework.
+
+IMPORTANT:
+
+Do NOT implement AI pose detection yet.
+
+Instead build the complete UI, architecture and guidance system so future AI integration requires minimal changes.
+
+====================================================
+
+SMART GUIDE PANEL
+
+While Camera is open, display a floating glass card.
+
+The card should be movable by the developer but fixed for users.
+
+Show:
+
+Current Pose Name
+
+Current Step
+
+Progress
+
+Example
+
+Step 1 / 6
+
+Status Indicator
+
+Waiting
+
+Aligning
+
+Almost Ready
+
+Perfect
+
+====================================================
+
+LIVE DISTANCE GUIDE
+
+Create a beautiful distance indicator.
+
+Display
+
+Move Closer
+
+Move Back
+
+Perfect Distance
+
+Use color indicators
+
+Red
+
+Yellow
+
+Green
+
+For now use demo logic.
+
+Create a clean architecture so real AI distance detection can replace the demo later.
+
+====================================================
+
+ALIGNMENT STATUS
+
+Create placeholders for
+
+Head
+
+Left Hand
+
+Right Hand
+
+Body
+
+Left Leg
+
+Right Leg
+
+Each body part should support
+
+Waiting
+
+Correct
+
+Incorrect
+
+Future AI will update these values.
+
+====================================================
+
+SMART INSTRUCTIONS
+
+Display live instruction text.
+
+Examples
+
+Move Left
+
+Move Right
+
+Raise Right Hand
+
+Lower Left Hand
+
+Turn Face Left
+
+Turn Face Right
+
+Stand Straight
+
+Move Camera Higher
+
+Move Camera Lower
+
+Perfect
+
+Currently rotate these messages using demo logic every few seconds.
+
+Prepare architecture for real AI updates.
+
+====================================================
+
+VISUAL FEEDBACK
+
+Display a small alignment ring around the pose overlay.
+
+Colors
+
+Red
+
+Yellow
+
+Green
+
+Animate smoothly.
+
+====================================================
+
+AUTO CAPTURE PLACEHOLDER
+
+Add an Auto Capture toggle.
+
+OFF
+
+ON
+
+When ON
+
+Show countdown placeholder
+
+3
+
+2
+
+1
+
+Captured
+
+No real capture logic yet.
+
+====================================================
+
+VOICE GUIDE PLACEHOLDER
+
+Create Voice Guide toggle.
+
+ON
+
+OFF
+
+Display demo messages.
+
+Architecture must support future Text-To-Speech.
+
+====================================================
+
+CAMERA HUD
+
+Display
+
+Selected Pose
+
+Recommended Distance
+
+Camera Mode
+
+Overlay Opacity
+
+Battery Friendly Indicator
+
+====================================================
+
+SETTINGS
+
+Camera Guide
+
+Voice Guide
+
+Auto Capture
+
+Grid
+
+Overlay Opacity
+
+Animation Speed
+
+Save all settings locally using MMKV.
+
+====================================================
+
+UI
+
+Keep the current premium UI.
+
+Improve polish.
+
+Improve spacing.
+
+Improve animations.
+
+Do NOT change the successful camera layout.
+
+====================================================
+
+PERFORMANCE
+
+Avoid unnecessary re-renders.
+
+Keep camera smooth.
+
+Target 60 FPS.
+
+Optimize state management.
+
+====================================================
+
+FUTURE READY
+
+Create interfaces and services for
+
+MediaPipe
+
+ML Kit
+
+TensorFlow Lite
+
+Pose Detection
+
+Skeleton Detection
+
+Distance Detection
+
+Auto Capture
+
+Voice Guidance
+
+Do NOT install or activate these libraries yet.
+
+Only prepare clean interfaces and architecture.
+
+====================================================
+
+OUTPUT
+
+The app must compile successfully.
+
+No React Hook errors.
+
+No TypeScript errors.
+
+No camera crashes.
+
+Everything must work perfectly in Expo Preview.

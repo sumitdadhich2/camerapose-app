@@ -496,6 +496,15 @@ export default function CameraScreen() {
         onRetake={() => setReviewPhoto(null)}
         onSave={() => setReviewPhoto(null)}
         onClose={() => setReviewPhoto(null)}
+        poseId={activePoseId}
+        poseName={activePose?.title}
+        categoryId={activePose?.categoryId}
+        categoryName={
+          activePose
+            ? PoseLibraryService.getCategoryById(activePose.categoryId)?.name
+            : undefined
+        }
+        facingCamera={facing}
       />
 
       <PoseInfoSheet

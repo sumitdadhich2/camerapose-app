@@ -16,6 +16,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ThemeProvider } from "@/theme/ThemeProvider";
 import { PosePackService } from "@/services/PosePackService";
+import { useCollectionsStore } from "@/store/useCollectionsStore";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -33,6 +34,9 @@ function RootLayoutNav() {
       <Stack.Screen name="camera/[id]" options={{ presentation: "fullScreenModal" }} />
       <Stack.Screen name="subscription" options={{ presentation: "modal" }} />
       <Stack.Screen name="settings" options={{ headerShown: true, title: "Settings" }} />
+      <Stack.Screen name="storage" options={{ headerShown: true, title: "Storage & Cache" }} />
+      <Stack.Screen name="photo/[id]" options={{ headerShown: false, presentation: "fullScreenModal" }} />
+      <Stack.Screen name="collection/[id]" options={{ headerShown: false }} />
       <Stack.Screen name="privacy" options={{ headerShown: true, title: "Privacy Policy" }} />
       <Stack.Screen name="terms" options={{ headerShown: true, title: "Terms" }} />
       <Stack.Screen name="about" options={{ headerShown: true, title: "About" }} />
@@ -51,11 +55,10 @@ export default function RootLayout() {
   useEffect(() => {
     if (fontsLoaded || fontError) {
       SplashScreen.hideAsync();
-      // Initialise pose packs in the background — marks all bundled
-      // categories as 'cached' so the first tap always opens instantly.
-      PosePackService.initialize().catch(() => {
-        // Non-fatal: app works fine if initialization fails on first launch.
-      });
+      // Mark all bundled categories as 'cached' so the first tap is instant.
+      PosePackService.initialize().catch(() => {});
+      // Load persisted collections (default collections merged with user data).
+      useCollectionsStore.getState().loadCollections().catch(() => {});
     }
   }, [fontsLoaded, fontError]);
 

@@ -1,5 +1,13 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, Modal, Image } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  Text,
+  Modal,
+  Share,
+} from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '../../hooks/useColors';
 import { SPACING, TYPOGRAPHY } from '../../constants/theme';
@@ -13,6 +21,12 @@ interface PhotoReviewModalProps {
   onRetake: () => void;
   onSave: () => void;
   onClose: () => void;
+  // Pose context forwarded from camera screen
+  poseId?: string;
+  poseName?: string;
+  categoryId?: string;
+  categoryName?: string;
+  facingCamera?: 'front' | 'back';
 }
 
 export const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
@@ -21,6 +35,11 @@ export const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
   onRetake,
   onSave,
   onClose,
+  poseId,
+  poseName,
+  categoryId,
+  categoryName,
+  facingCamera,
 }) => {
   const colors = useColors();
   const { addPhoto } = useCapturedPhotosStore();
@@ -38,25 +57,57 @@ export const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
           id: asset.id,
           uri: asset.uri,
           timestamp: Date.now(),
+          poseId,
+          poseName,
+          categoryId,
+          categoryName,
+          facingCamera,
         });
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         onSave();
       } else {
-        alert("Permission needed to save photos");
+        alert('Permission needed to save photos');
       }
     } catch (error) {
       console.error(error);
-      alert("Error saving photo");
+      alert('Error saving photo');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        url: photoUri,
+        message: poseName ? `Check out my pose: ${poseName}` : 'Check out this pose!',
+        title: poseName ?? 'Pose Master AI',
+      });
+    } catch {
+      // User dismissed
     }
   };
 
   return (
     <Modal visible={visible} transparent animationType="fade">
       <View style={styles.container}>
-        <Image source={{ uri: photoUri }} style={StyleSheet.absoluteFill} resizeMode="contain" />
-        
+        <Image
+          source={{ uri: photoUri }}
+          style={StyleSheet.absoluteFill}
+          contentFit="contain"
+          transition={200}
+        />
+
+        {/* Pose label */}
+        {poseName && (
+          <View style={styles.poseLabel}>
+            <Text style={styles.poseLabelText} numberOfLines={1}>{poseName}</Text>
+            {categoryName && (
+              <Text style={styles.categoryLabelText}>{categoryName}</Text>
+            )}
+          </View>
+        )}
+
         <View style={styles.topControls}>
           <TouchableOpacity style={styles.iconButton} onPress={onClose}>
             <Ionicons name="close" size={28} color="#fff" />
@@ -64,24 +115,30 @@ export const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
         </View>
 
         <View style={styles.bottomControls}>
-          <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.card }]} onPress={onRetake}>
+          <TouchableOpacity
+            style={[styles.actionButton, { backgroundColor: colors.card }]}
+            onPress={onRetake}
+          >
             <Ionicons name="trash-outline" size={24} color={colors.destructive} />
             <Text style={[styles.actionText, { color: colors.destructive }]}>Delete</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.card }]} onPress={() => {}}>
+          <TouchableOpacity
+            style={[styles.actionButton, { backgroundColor: colors.card }]}
+            onPress={handleShare}
+          >
             <Ionicons name="share-outline" size={24} color={colors.foreground} />
             <Text style={[styles.actionText, { color: colors.foreground }]}>Share</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={[styles.saveButton, { backgroundColor: colors.primary }]} 
+          <TouchableOpacity
+            style={[styles.saveButton, { backgroundColor: colors.primary }]}
             onPress={handleSave}
             disabled={saving}
           >
-            <Ionicons name="download-outline" size={24} color={colors.primaryForeground} />
+            <Ionicons name="checkmark" size={24} color={colors.primaryForeground} />
             <Text style={[styles.saveText, { color: colors.primaryForeground }]}>
-              {saving ? "Saving..." : "Save"}
+              {saving ? 'Saving…' : 'Save'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -94,6 +151,28 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
+  },
+  poseLabel: {
+    position: 'absolute',
+    top: 100,
+    left: SPACING.md,
+    right: SPACING.md,
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  poseLabelText: {
+    color: 'rgba(255,255,255,0.9)',
+    fontFamily: TYPOGRAPHY.weights.bold,
+    fontSize: TYPOGRAPHY.sizes.lg,
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
+  categoryLabelText: {
+    color: '#FFD54F',
+    fontFamily: TYPOGRAPHY.weights.medium,
+    fontSize: TYPOGRAPHY.sizes.sm,
+    marginTop: 2,
   },
   topControls: {
     position: 'absolute',
@@ -141,5 +220,5 @@ const styles = StyleSheet.create({
   saveText: {
     fontFamily: TYPOGRAPHY.weights.bold,
     fontSize: TYPOGRAPHY.sizes.md,
-  }
+  },
 });

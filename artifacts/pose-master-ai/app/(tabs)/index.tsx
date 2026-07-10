@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, Text, FlatList, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { useColors } from '../../hooks/useColors';
@@ -7,6 +7,8 @@ import { SearchBar } from '../../components/SearchBar';
 import { AnimatedBanner } from '../../components/AnimatedBanner';
 import { PackAwareCategoryCard } from '../../components/PackAwareCategoryCard';
 import { PosePackService } from '../../services/PosePackService';
+import { useCapturedPhotosStore } from '../../store/useCapturedPhotosStore';
+import { Image } from 'expo-image';
 import { PoseCard } from '../../components/PoseCard';
 import { SectionHeader } from '../../components/SectionHeader';
 import { useRecentStore } from '../../store/useRecentStore';
@@ -42,6 +44,13 @@ export default function HomeScreen() {
   const handleSubscribe = () => {
     router.push('/subscription');
   };
+
+  const { photos: galleryPhotos, loadPhotos } = useCapturedPhotosStore();
+  const recentGalleryPhotos = useMemo(() => galleryPhotos.slice(0, 6), [galleryPhotos]);
+
+  useEffect(() => {
+    loadPhotos();
+  }, []);
 
   const trendingPoses = useMemo(() => PoseLibraryService.getTrending(), []);
   const recommendedPoses = useMemo(() => PoseLibraryService.getRecommended(), []);
@@ -177,6 +186,39 @@ export default function HomeScreen() {
                 </View>
               </TouchableOpacity>
             </View>
+          )}
+
+          {/* ── Recent Photos ──────────────────────────────────── */}
+          {recentGalleryPhotos.length > 0 && (
+            <>
+              <SectionHeader
+                title="Recent Photos"
+                actionTitle="See All"
+                onActionPress={() => router.navigate('/(tabs)/gallery')}
+                style={{ marginTop: SPACING.xl }}
+              />
+              <FlatList
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.listContainer}
+                data={recentGalleryPhotos}
+                keyExtractor={item => item.id}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.galleryThumb}
+                    activeOpacity={0.85}
+                    onPress={() => router.push(`/photo/${item.id}`)}
+                  >
+                    <Image
+                      source={{ uri: item.uri }}
+                      style={StyleSheet.absoluteFill}
+                      contentFit="cover"
+                      transition={150}
+                    />
+                  </TouchableOpacity>
+                )}
+              />
+            </>
           )}
 
           {/* ── My Favourites ──────────────────────────────────── */}
@@ -428,5 +470,12 @@ const styles = StyleSheet.create({
   },
   bottomPadding: {
     height: 40,
+  },
+  galleryThumb: {
+    width: 100,
+    height: 100,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#1a1a1a',
   },
 });

@@ -1,0 +1,292 @@
+Continue the existing Pose Master AI project.
+
+Do NOT recreate the project.
+
+Do NOT break any existing feature.
+
+Only extend the project.
+
+====================================================
+
+MAIN GOAL
+
+Build a professional offline Gallery and Download Management system.
+
+The application should feel like a premium camera application.
+
+====================================================
+
+DOWNLOADED POSE PACK MANAGER
+
+Create a local Pose Pack Manager.
+
+Features:
+
+• View all downloaded pose packs
+• Total storage used
+• Number of poses
+• Pack version
+• Last updated
+• Delete downloaded pack
+• Clear all downloaded packs
+• Automatic cache validation
+
+Everything should work locally.
+
+====================================================
+
+LOCAL GALLERY
+
+Create a premium Gallery.
+
+Show only photos captured using Pose Master AI.
+
+Grid Layout
+
+2 Columns
+
+3 Columns
+
+Responsive
+
+Fast Loading
+
+Lazy Loading
+
+Smooth Scrolling
+
+====================================================
+
+PHOTO DETAILS
+
+When user taps a photo
+
+Open full screen.
+
+Display
+
+Date
+
+Time
+
+Pose Name
+
+Category
+
+Camera Used
+
+Favorite
+
+Delete
+
+Share
+
+Rename
+
+Move to Collection
+
+====================================================
+
+COLLECTIONS
+
+Create Collections.
+
+Examples
+
+Favorites
+
+Travel
+
+Wedding
+
+Instagram
+
+Traditional
+
+Family
+
+Custom Collections
+
+User can create unlimited collections.
+
+====================================================
+
+SEARCH
+
+Offline Search
+
+Search by
+
+Date
+
+Category
+
+Pose Name
+
+Collection
+
+====================================================
+
+SORT
+
+Newest
+
+Oldest
+
+Favorites
+
+Category
+
+Recently Captured
+
+====================================================
+
+DELETE
+
+Delete one photo
+
+Delete multiple photos
+
+Delete entire collection
+
+Confirmation dialog required.
+
+====================================================
+
+SHARE
+
+Prepare Share Sheet.
+
+Support
+
+WhatsApp
+
+Instagram
+
+Facebook
+
+Telegram
+
+Copy
+
+Save
+
+Use native Share API.
+
+====================================================
+
+CACHE SYSTEM
+
+Create a professional cache manager.
+
+Cache
+
+Preview Images
+
+SVG Templates
+
+Downloaded Packs
+
+Gallery Thumbnails
+
+Automatically clean unused cache.
+
+====================================================
+
+STORAGE SETTINGS
+
+Create Storage page.
+
+Display
+
+Downloaded Packs Size
+
+Gallery Size
+
+Cache Size
+
+Free Device Storage
+
+Buttons
+
+Clear Cache
+
+Delete Downloads
+
+Delete Gallery
+
+====================================================
+
+HOME IMPROVEMENTS
+
+Show
+
+Recent Photos
+
+Favorite Pose
+
+Last Used Category
+
+Downloaded Packs
+
+Continue Last Pose
+
+====================================================
+
+UI
+
+Modern
+
+Premium
+
+Glass Cards
+
+Rounded
+
+Black + Gold Theme
+
+Smooth Animations
+
+====================================================
+
+PERFORMANCE
+
+Support
+
+20,000+ Photos
+
+10,000+ Pose Templates
+
+Fast Search
+
+Lazy Loading
+
+Image Caching
+
+Virtualized Lists
+
+====================================================
+
+SECURITY
+
+Photos remain only on the user's device.
+
+Never upload images automatically.
+
+No cloud storage.
+
+====================================================
+
+OUTPUT
+
+Everything should compile successfully.
+
+No React Hook errors.
+
+No TypeScript errors.
+
+No unnecessary re-renders.
+
+Maintain smooth 60 FPS experience.
+
+Keep the architecture scalable and production-ready.

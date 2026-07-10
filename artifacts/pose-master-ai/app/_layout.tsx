@@ -15,6 +15,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ThemeProvider } from "@/theme/ThemeProvider";
+import { PosePackService } from "@/services/PosePackService";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -50,6 +51,11 @@ export default function RootLayout() {
   useEffect(() => {
     if (fontsLoaded || fontError) {
       SplashScreen.hideAsync();
+      // Initialise pose packs in the background — marks all bundled
+      // categories as 'cached' so the first tap always opens instantly.
+      PosePackService.initialize().catch(() => {
+        // Non-fatal: app works fine if initialization fails on first launch.
+      });
     }
   }, [fontsLoaded, fontError]);
 

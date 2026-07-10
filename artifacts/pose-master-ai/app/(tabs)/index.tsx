@@ -5,7 +5,8 @@ import { useColors } from '../../hooks/useColors';
 import { SPACING, TYPOGRAPHY } from '../../constants/theme';
 import { SearchBar } from '../../components/SearchBar';
 import { AnimatedBanner } from '../../components/AnimatedBanner';
-import { CategoryCard } from '../../components/CategoryCard';
+import { PackAwareCategoryCard } from '../../components/PackAwareCategoryCard';
+import { PosePackService } from '../../services/PosePackService';
 import { PoseCard } from '../../components/PoseCard';
 import { SectionHeader } from '../../components/SectionHeader';
 import { useRecentStore } from '../../store/useRecentStore';
@@ -23,8 +24,11 @@ export default function HomeScreen() {
   const { recentCategories, recentTemplates, continueLastPoseId } = useRecentStore();
   const { favoritePoseIds, toggleFavoritePose } = useFavoritesStore();
 
-  const handleCategoryPress = (categoryId: string) => {
-    router.push(`/category/${categoryId}`);
+  const handleCategoryPress = async (categoryId: string) => {
+    const ready = await PosePackService.ensurePackAvailable(categoryId);
+    if (ready) {
+      router.push(`/category/${categoryId}`);
+    }
   };
 
   const handlePosePress = (poseId: string) => {
@@ -233,7 +237,8 @@ export default function HomeScreen() {
             data={allCategories.slice(0, 6)}
             keyExtractor={item => item.id}
             renderItem={({ item }) => (
-              <CategoryCard
+              <PackAwareCategoryCard
+                categoryId={item.id}
                 name={item.name}
                 icon={item.icon}
                 count={item.poseCount}
@@ -252,7 +257,8 @@ export default function HomeScreen() {
                 data={recentCategories.map(id => PoseLibraryService.getCategoryById(id)).filter(Boolean) as any}
                 keyExtractor={item => item.id}
                 renderItem={({ item }) => (
-                  <CategoryCard
+                  <PackAwareCategoryCard
+                    categoryId={item.id}
                     name={item.name}
                     icon={item.icon}
                     count={item.poseCount}

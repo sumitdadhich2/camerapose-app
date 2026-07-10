@@ -29,6 +29,7 @@ import { PoseLibraryService } from '../../services/PoseLibraryService';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { PoseTemplate } from '../../types';
 import { getSvgOutline } from '../../features/overlay/svgOutlines';
+import { activePoseDetector, unavailableDetector } from '../../services/PoseDetectionService';
 
 // ─── Sub-component defined at module level to avoid hook-order issues ────────
 

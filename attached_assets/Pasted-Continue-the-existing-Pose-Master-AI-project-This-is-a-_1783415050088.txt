@@ -1,0 +1,329 @@
+Continue the existing Pose Master AI project.
+
+This is a major architecture upgrade.
+
+Do NOT recreate the project.
+
+Do NOT modify the current working UI.
+
+========================================================
+
+GOAL
+
+Replace the current fake pose detection architecture with a production-ready Pose Detection framework.
+
+IMPORTANT
+
+Do NOT generate fake scores.
+
+Do NOT use timers.
+
+Do NOT use random percentages.
+
+Do NOT simulate AI.
+
+Everything must be ready for real pose detection later.
+
+========================================================
+
+ARCHITECTURE
+
+Create a new module:
+
+PoseDetectionEngine
+
+This engine must be independent from the Camera UI.
+
+The Camera screen should never contain pose detection logic.
+
+The engine should expose interfaces only.
+
+Future implementations:
+
+MediaPipe Pose Landmarker
+
+Google ML Kit Pose Detection
+
+TensorFlow Lite
+
+Custom AI Engine
+
+The Camera UI should work with any engine.
+
+========================================================
+
+POSE MODEL
+
+Create a standard body landmark model.
+
+Prepare support for
+
+Head
+
+Neck
+
+Left Shoulder
+
+Right Shoulder
+
+Left Elbow
+
+Right Elbow
+
+Left Wrist
+
+Right Wrist
+
+Chest
+
+Hip Center
+
+Left Hip
+
+Right Hip
+
+Left Knee
+
+Right Knee
+
+Left Ankle
+
+Right Ankle
+
+Future support:
+
+Face
+
+Hands
+
+Fingers
+
+========================================================
+
+SVG MATCH ENGINE
+
+Create a new Overlay Matching Engine.
+
+The engine should compare
+
+Expected SVG landmark positions
+
+↓
+
+Detected landmark positions
+
+↓
+
+Generate matching results.
+
+For now
+
+Leave implementation empty.
+
+Only build architecture.
+
+========================================================
+
+MATCH RESULT MODEL
+
+Prepare
+
+Overall Score
+
+Head Score
+
+Arm Score
+
+Leg Score
+
+Body Rotation
+
+Camera Distance
+
+Camera Angle
+
+Missing Parts
+
+Everything nullable.
+
+Never generate fake values.
+
+========================================================
+
+DISTANCE ENGINE
+
+Create a dedicated DistanceEngine.
+
+Future responsibility
+
+Move Closer
+
+Move Back
+
+Camera Too High
+
+Camera Too Low
+
+Camera Tilted
+
+Portrait OK
+
+Landscape OK
+
+Current implementation
+
+Not Available
+
+========================================================
+
+ALIGNMENT ENGINE
+
+Prepare
+
+Perfect
+
+Too Left
+
+Too Right
+
+Too High
+
+Too Low
+
+Rotate Body
+
+Rotate Face
+
+Future implementation only.
+
+========================================================
+
+AUTO CAPTURE ENGINE
+
+Create architecture.
+
+States
+
+Disabled
+
+Waiting
+
+Ready
+
+Capturing
+
+Captured
+
+No fake countdown.
+
+========================================================
+
+VOICE ENGINE
+
+Prepare VoiceCoach service.
+
+Future messages
+
+Move Left
+
+Raise Right Hand
+
+Come Closer
+
+Perfect Pose
+
+No fake playback.
+
+========================================================
+
+CAMERA UI
+
+If no detector exists
+
+Display only
+
+"Pose Detection Not Available"
+
+Hide
+
+Scores
+
+Body Check
+
+Alignment %
+
+Auto Capture
+
+========================================================
+
+SETTINGS
+
+Developer Mode
+
+Enable Debug Overlay
+
+OFF by default.
+
+Only in Developer Mode show
+
+Landmarks
+
+Body Points
+
+Debug Values
+
+========================================================
+
+CODE QUALITY
+
+Separate
+
+UI
+
+Camera
+
+Overlay
+
+Detection
+
+Distance
+
+Voice
+
+Storage
+
+Everything modular.
+
+========================================================
+
+PERFORMANCE
+
+No unnecessary renders.
+
+Lazy loading.
+
+Memoization.
+
+Clean architecture.
+
+========================================================
+
+OUTPUT
+
+The project must compile successfully.
+
+No fake AI.
+
+No fake alignment.
+
+No fake score.
+
+No random values.
+
+Everything should be production-ready for future MediaPipe or ML Kit integration.
+
+No TypeScript errors.
+
+No React Hook errors.
+
+No Camera crashes.
